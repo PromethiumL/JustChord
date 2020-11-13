@@ -1,2 +1,0 @@
-python-rtmidi==1.4.0
-PyQt5==5.14.1

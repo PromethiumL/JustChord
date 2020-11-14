@@ -1,6 +1,6 @@
 # coding:utf-8
 from .mainwidget import *
-from ..core import chord
+from JustChord.core import chord
 import copy
 
 # import sys

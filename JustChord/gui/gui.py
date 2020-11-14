@@ -1,5 +1,3 @@
-import copy
-from . import monitor
 import traceback
 
 from .chordwindow import *
@@ -20,7 +18,7 @@ class JustChordMainWindow(MainWidget):
         self.show()
 
 
-default_midi_port = 1
+default_midi_port = 0
 
 def main():
     try:

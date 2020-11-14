@@ -1,11 +1,10 @@
-import os
 import re
 import sys
 
 from PyQt5 import QtCore, QtWidgets, QtSvg
 from PyQt5.QtGui import *
 
-from ..core import chord
+from JustChord.core import chord
 from .mainwidget import MainWidget, monitor
 
 DEFAULT_LINE_GAP = 30

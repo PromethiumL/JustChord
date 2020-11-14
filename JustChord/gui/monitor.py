@@ -48,10 +48,10 @@ class KeyDetector:
         pitch %= 12
         if len(self.noteWindow) >= self.WINDOW_SIZE:
             for keyName in self.RELATED_KEYS[self.noteWindow[0][0]]:
-                self.frequencyDict[keyName] -= self.noteWindow[0][1] #+ (1 if self.noteWindow[0][2] == keyName else 0)
+                self.frequencyDict[keyName] -= self.noteWindow[0][1]  # + (1 if self.noteWindow[0][2] == keyName else 0)
             self.noteWindow.pop(0)
         for keyName in self.RELATED_KEYS[pitch]:
-            self.frequencyDict[keyName] += weight #+ (1 if self.currentKey == keyName else 0)
+            self.frequencyDict[keyName] += weight  # + (1 if self.currentKey == keyName else 0)
         self.noteWindow.append((pitch, weight, self.currentKey))
         result = list(reversed(sorted(self.frequencyDict.items(), key=lambda i: self.frequencyDict[i[0]])))
         print(result)
@@ -101,6 +101,7 @@ class Monitor(QThread):
             # msg = midiin.getMessage()
             msg = midiIn.get_message()
             if msg:
+                print(msg)
                 msg = msg[0]  # the raw data
                 if len(msg) < 3:
                     continue
@@ -126,6 +127,8 @@ class Monitor(QThread):
         # print(msg)
         # check the pedal cc [0xB0, 64, velo]
 
+        # Currently, it's better to process all 16 channels.
+        c = c >> 4 << 4  # remove this line for only channel 1.
         if c == 0xB0 and p == 64:
             if v >= 64:
                 sustainPedalDown = True

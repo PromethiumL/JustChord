@@ -10,11 +10,8 @@ class MainWidget(QWidget):
         super().__init__()
         if not MainWidget.monitoring:
             self.initMonitor()
-        self.isMouseDown = False
-        self.isTransparent = False
-        if self.isTransparent:
-            self.setWindowFlag(Qt.FramelessWindowHint)
-            self.setAttribute(Qt.WA_TranslucentBackground)
+        self._initUI()
+
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape or event.key() == Qt.Key_Q:
@@ -65,5 +62,9 @@ class MainWidget(QWidget):
 
         self.move(newx, newy)
 
-    def initUI(self):
-        pass
+    def _initUI(self):
+        self.isMouseDown = False
+        self.isTransparent = False
+        if self.isTransparent:
+            self.setWindowFlag(Qt.FramelessWindowHint)
+            self.setAttribute(Qt.WA_TranslucentBackground)

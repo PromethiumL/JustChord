@@ -19,10 +19,22 @@ _accidental_widget_vertical_offsets = {
     None: 0,
     'sharp': -0.5,
     'flat': -1,
-    'double_sharp': -0.5,
-    'double_flat': -0.9,
+    'double_sharp':0,
+    'double_flat': -0.5,
     'natural': -0.5
 }
+
+accidental_scaling_factors = {
+    ## type: (width_factor, height_factor)
+    None: (1, 1),
+    'sharp': (0.85, 1),
+    'flat': (0.85, 1),
+    'double_sharp': (1, 0.5),
+    'double_flat': (1.2, 1),
+    'natural': (0.7, 1)
+}
+
+
 # _accidental_widget_vertical_offsets = {
 #     None: 0,
 #     'sharp': 0,
@@ -57,9 +69,12 @@ class NoteWidget(QtSvg.QSvgWidget):
 
     def setAccidentalType(self, t=None):
         if t in {'sharp', 'flat', 'double_sharp', 'double_flat', 'natural'}:
-            self.accidentalWidget.load('./assets/{}.svg'.format(t))
+            widget = self.accidentalWidget
+            widget.load('./assets/{}.svg'.format(t))
+            widget.setFixedWidth(self.parent().lineGap * accidental_scaling_factors[t][0])
+            widget.setFixedHeight(self.parent().lineGap * 2 * accidental_scaling_factors[t][1])
             self.accidentalType = t
-            # self.accidentalWidget.setStyleSheet("border: 1px solid red;")
+            # widget.setStyleSheet("border: 1px solid red;")
 
     def setCenterPosition(self, x=None, y=None, w=None, h=None):
         if x is None:
@@ -78,8 +93,8 @@ class NoteWidget(QtSvg.QSvgWidget):
         self.accidentalWidget.setGeometry(
             self.pos().x() + self.accidentalOffsetX,
             self.pos().y() - 1.0 * self.parent().lineGap,
-            self.parent().lineGap,
-            2 * self.parent().lineGap
+            self.parent().lineGap * accidental_scaling_factors[self.accidentalType][0],
+            2 * self.parent().lineGap * accidental_scaling_factors[self.accidentalType][1]
         )
 
     def move_accidental_widget_with_x_offset(self, offset=0):
@@ -115,7 +130,6 @@ class StaffWindow(MainWidget):
         # self.show()
         if __name__ != '__main__':
             MainWidget.monitor.trigger.connect(self.updateNotes)
-
 
     def updateNotes(self):
         self.keyName = monitor.KeyDetector.currentKey
@@ -155,7 +169,6 @@ class StaffWindow(MainWidget):
 
         self.drawNotes()
 
-
     def setKeySignatures(self, keyName='C'):
         if keyName not in chord.NATURAL_SCALES:
             raise Exception('invalid keyName{}'.format(keyName))
@@ -168,7 +181,7 @@ class StaffWindow(MainWidget):
         isSharpKey = keyName in chord.KEY_LIST[0]
         number = chord.KEY_LIST[0 if isSharpKey else 1].index(keyName) + 1
         beginX = self.width() / 2 - DEFAULT_WIDTH * 0.2
-        gapX = 0.6 * self.lineGap
+        gapX = 0.75
         sharp_beginY1 = self.calcNoteHeight('G5')
         sharp_beginY2 = self.calcNoteHeight('G3')
         flat_beginY1 = self.calcNoteHeight('C5')
@@ -182,19 +195,18 @@ class StaffWindow(MainWidget):
                     self.keySignatures[clef][name][i].setGeometry(
                         x,
                         y,
-                        self.lineGap,
-                        2 * self.lineGap
+                        self.lineGap * accidental_scaling_factors[name][0],
+                        self.lineGap * 2 * accidental_scaling_factors[name][1]
                     )
                     visible = isSharpKey ^ (name != 'sharp') and i < number
                     # visible = True
                     self.keySignatures[clef][name][i].setVisible(visible)
-                    x += gapX
+                    x += self.keySignatures[clef][name][i].width() * gapX
                     if name == 'sharp':
                         deltaY = 1.5 if i % 2 == (1 if i > 2 else 0) else -2
                     else:
                         deltaY = -1.5 if i % 2 == 0 else 2
                     y += self.lineGap * deltaY
-
 
     def initUI(self):
         print(sys.path)
@@ -202,7 +214,7 @@ class StaffWindow(MainWidget):
         self.staffWidth = 20 * self.lineGap
         self.strokeWidth = self.lineGap * 0.1
         self.pen = QPen(QtCore.Qt.black, self.strokeWidth, QtCore.Qt.SolidLine)
-        self.staffCenterY = self.height() / 2;
+        self.staffCenterY = self.height() / 2
         self.noteWidgets = {}
         self.notes = set()
         self.keySignatures = []
@@ -218,7 +230,6 @@ class StaffWindow(MainWidget):
         self.drawNotes()
         self.drawAllKeySignatures()
 
-
     def drawStaff(self):
         self.gClef.setGeometry(
             (self.width() - self.staffWidth) / 2 - .25 * self.lineGap,
@@ -233,7 +244,6 @@ class StaffWindow(MainWidget):
             self.lineGap * 3.2
         )
 
-
     def drawAllKeySignatures(self):
         self.keySignatures = {
             'G': {  # G clef
@@ -245,15 +255,14 @@ class StaffWindow(MainWidget):
                 'flat': []
             }
         }  # There should be 6 * 2 * 2 == 24 accidentals.
-        for claf in ['G', 'F']:
+        for clef in ['G', 'F']:
             for name in ['sharp', 'flat']:
                 for i in range(7):
                     svg = QtSvg.QSvgWidget(self)
                     svg.load('./assets/{}.svg'.format(name))
                     svg.setVisible(False)
-                    self.keySignatures[claf][name].append(svg)
+                    self.keySignatures[clef][name].append(svg)
         self.setKeySignatures(self.keyName)
-
 
     def calcNoteHeight(self, name):
         degree = "CDEFGAB".index(name[0])
@@ -264,7 +273,6 @@ class StaffWindow(MainWidget):
             raise Exception("Note name missing octave info! '{}'".format(name))
         octave = int(octave)
         return self.staffCenterY - ((octave - 4) * 7 + degree) * self.lineGap / 2
-
 
     def addNote(self, name):
         if name in self.notes:
@@ -280,14 +288,12 @@ class StaffWindow(MainWidget):
         )
         self.noteWidgets[name] = n
 
-
     def removeNote(self, name):
         if self.noteWidgets[name].accidentalType != None:
             self.noteWidgets[name].accidentalWidget.deleteLater()
         self.noteWidgets[name].deleteLater()
         del self.noteWidgets[name]
         self.notes.discard(name)
-
 
     def drawNotes(self):
         l = list(self.notes)
@@ -363,10 +369,8 @@ class StaffWindow(MainWidget):
 
             currentNote.show()
 
-
     def respellNotes(self):
         pass
-
 
     def getAccidentalInfoInKey(self, noteName, keyName):
         """This deals with the accidentals."""
@@ -390,13 +394,11 @@ class StaffWindow(MainWidget):
             return ''
         return currentAccidental
 
-
     def resizeEvent(self, e):
         self.staffCenterY = self.height() / 2
         self.drawStaff()
         self.drawNotes()
         self.setKeySignatures(self.keyName)
-
 
     def paintEvent(self, e):
         painter = QPainter(self)

@@ -30,7 +30,7 @@ class ChordWindow(MainWidget):
         'showRestChords': True,
         'maxRestChords': 5,
         'restChordsScaleFactor': 0.5,
-        'restChordsTypeFScaleFactor': 0.8,
+        'restChordsTypeScaleFactor': 0.8,
         'keyName': 'C',
         'useRomanNotation': False,
         'showKeyLabel': True,
@@ -60,6 +60,22 @@ class ChordWindow(MainWidget):
                 self.chordlabels[i][0].setText('')
                 self.chordlabels[i][1].setText('')
         self.updateKeyLabel()
+
+    def toggleKeyLabel(self):
+        self.showKeyLabel = not self.showKeyLabel
+        self.updateKeyLabel()
+
+    def fontDialog(self):
+        font, valid = QFontDialog.getFont()
+        font = font.toString().split(',')[0]
+        if valid:
+            for idx, lbs in enumerate(self.chordlabels):
+                lbs[0].setStyleSheet('font-size: {}pt;'.format(
+                    self.chordFontSize * (1 if idx == 0 else self.restChordsScaleFactor)))
+                lbs[1].setStyleSheet('font-size: {}pt;'.format(
+                    self.chordFontSize * self.chordTypeScaleFactor * (1 if idx == 0 else self.restChordsTypeScaleFactor)))
+            self.keyLabel.setStyleSheet('font-size: {}pt;'.format(int(self.chordFontSize * self.restChordsScaleFactor)))
+            self.setStyleSheet('QLabel {{ font-family: "{}"; }}'.format(font))
 
     def textColorSettingsDialog(self):
         col = QColorDialog.getColor()
@@ -98,12 +114,7 @@ class ChordWindow(MainWidget):
             pass
 
         if event.key() == Qt.Key_F:
-            font, valid = QFontDialog.getFont()
-            if valid:
-                for lbs in self.chordlabels:
-                    lbs[0].setFont(font)
-                    lbs[1].setFont(font)
-                self.keyLabel.setFont(font)
+            pass
 
         if event.key() == Qt.Key_S:
             self.isSharpKey = not self.isSharpKey
@@ -228,17 +239,13 @@ class ChordWindow(MainWidget):
             # the best chord's labels
             if self.chordlabels.index(lbs) == 0:
                 lbs[0].setText('Chord...')
-                lbs[0].setFont(QFont("Century Gothic", self.chordFontSize))
+                lbs[0].setStyleSheet(f'font-size: {self.chordFontSize}pt;')
                 lbs[0].setAlignment(Qt.AlignLeft)
                 lbs[0].adjustSize()
                 lbs[0].setPalette(self.pl)
-                lbs[0].setToolTip(CHORDLABEL_TIP)
-                # lbs[0].setFrameShape(QFrame.Panel)
-                # lbs[0].setFrameShadow(QFrame.Sunken)
-                # lbs[0].setLineWidth(1)
+                # lbs[0].setToolTip(CHORDLABEL_TIP)
 
-                lbs[1].setFont(QFont("Century Gothic", int(
-                    self.chordFontSize * self.chordTypeScaleFactor)))
+                lbs[1].setStyleSheet(f'font-size: {self.chordFontSize * self.chordTypeScaleFactor}pt;')
                 lbs[1].setAlignment(Qt.AlignLeft)
                 lbs[1].adjustSize()
                 lbs[1].setToolTip(CHORDLABEL_TIP)
@@ -247,28 +254,18 @@ class ChordWindow(MainWidget):
                     lbs[0].x() + lbs[0].width() + self.chordNameGap,
                     lbs[0].y() + lbs[0].height() - lbs[1].height()
                 )
-            # lbs[1].setFrameShape(QFrame.Panel)
-            # lbs[1].setFrameShadow(QFrame.Sunken)
-            # lbs[1].setLineWidth(1)
-            # the rest chords' labels
             else:
                 idx = self.chordlabels.index(lbs)
                 prev_lbs = self.chordlabels[idx - 1]
-
                 font_size = self.chordFontSize * self.restChordsScaleFactor
-                lbs[0].setFont(QFont("Century Gothic", font_size))
+                lbs[0].setStyleSheet(f'font-size: {font_size}pt;')
                 lbs[0].setAlignment(Qt.AlignLeft)
                 lbs[0].adjustSize()
                 lbs[0].setToolTip(CHORDLABEL_TIP)
                 lbs[0].setPalette(self.pl)
-                # lbs[0].setFrameShape(QFrame.Panel)
-                # lbs[0].setFrameShadow(QFrame.Sunken)
-                # lbs[0].setLineWidth(1)
                 lbs[0].move(0, prev_lbs[0].y() +
                             prev_lbs[0].height() + (10 if idx == 1 else 0))
-
-                lbs[1].setFont(QFont("Century Gothic", int(
-                    font_size * self.restChordsTypeFScaleFactor)))
+                lbs[1].setStyleSheet(f'font-size: {font_size * self.restChordsTypeScaleFactor}pt;')
                 lbs[1].setAlignment(Qt.AlignLeft)
                 lbs[1].adjustSize()
                 lbs[1].setToolTip(CHORDLABEL_TIP)
@@ -283,13 +280,11 @@ class ChordWindow(MainWidget):
 
         self.keyLabel = QLabel(self.keyName, self)
         self.updateKeyLabel()
-        self.keyLabel.setFont(QFont("Century Gothic", int(
-            self.chordFontSize * self.restChordsScaleFactor)))
+        self.keyLabel.setStyleSheet(f'font-size: {int(self.chordFontSize * self.restChordsScaleFactor)}pt;')
         self.keyLabel.setPalette(self.pl)
         self.keyLabel.adjustSize()
         self.show()
 
-    # @debug
     def keyNameClicked(self, keyName):
         self.keyName = keyName
         self.autoKeyDetection = False
@@ -301,11 +296,21 @@ class ChordWindow(MainWidget):
         colorAction = contextMenu.addAction("Text Color...")
         colorAction.triggered.connect(self.textColorSettingsDialog)
 
+        # Font
+        fontAction = contextMenu.addAction("Font...")
+        fontAction.triggered.connect(self.fontDialog)
+
         # Results
         moreResultsAction = contextMenu.addAction(
             "Hide More Results" if self.showRestChords else "Show More Results"
         )
         moreResultsAction.triggered.connect(lambda: self.toggleMoreResults(not self.showRestChords))
+
+        # Key Label
+        toggleKeyLabel = QAction('Show Key Label', parent=contextMenu, checkable=True, checked=self.showKeyLabel)
+        contextMenu.addAction(toggleKeyLabel)
+        toggleKeyLabel.triggered.connect(self.toggleKeyLabel)
+
 
         # KeySettings
         keyMenu = contextMenu.addMenu("Key Settings")

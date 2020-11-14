@@ -1,11 +1,16 @@
 import re
 import copy
 
-from .constants import *
+from JustChord.core.constants import *
 
 
-# def bp():
-#     pdb.set_trace()
+def debug(func):
+    def new_func(*args, **kwargs):
+        print(func.__name__, args, kwargs)
+        return func(*args, *kwargs)
+
+    return func
+
 
 def getPitchNumber(name):
     """returns the midi pitch number of the given noteName"""
@@ -258,14 +263,20 @@ class Chord:
     def __lt__(self, other):
         return self.complexity < other.complexity
 
+    def __repr__(self):
+        if not self.recognized:
+            return '<unrecognized>'
+        else:
+            return self.rootName + ' ' + self.typeName
 
-def _test():
+def main():
     notes = [59, 52, 67, 73]
     c = identifyChord(notes)[0]
     # c.updateName(key='Eb', roman_style=True)
     print(c.name)
     print(c.noteNames)
+    print(c)
 
-# if __name__ == '__main__':
-# print(addIntervalToNoteName('Bx4', 'P5'))
-# _test()
+if __name__ == '__main__':
+    print(addIntervalToNoteName('Bx4', 'P5'))
+    main()

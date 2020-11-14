@@ -54,7 +54,7 @@ class KeyDetector:
             self.frequencyDict[keyName] += weight  # + (1 if self.currentKey == keyName else 0)
         self.noteWindow.append((pitch, weight, self.currentKey))
         result = list(reversed(sorted(self.frequencyDict.items(), key=lambda i: self.frequencyDict[i[0]])))
-        print(result)
+        # print(result)
         if len(result) == 0:
             KeyDetector.currentKey = self.DEFAULT_KEY
             return
@@ -101,7 +101,6 @@ class Monitor(QThread):
             # msg = midiin.getMessage()
             msg = midiIn.get_message()
             if msg:
-                print(msg)
                 msg = msg[0]  # the raw data
                 if len(msg) < 3:
                     continue
@@ -144,7 +143,7 @@ class Monitor(QThread):
             if c == 0x90:
                 pressedNotes.add(p)
                 self.keyDetector.addNote(p)
-                print(self.keyDetector.currentKey)
+                # print(self.keyDetector.currentKey)
         elif c == 0x80 or c == 0x90:  # "note off" or "note on, velocity=0"
             if sustainPedalDown:
                 if p in pressedNotes:

@@ -2,16 +2,14 @@
 from .imports import *
 
 
-class MainWidget(QWidget):
+class BaseWidget(QWidget):
     monitoring = False
     monitor = None
 
     def __init__(self):
         super().__init__()
-        if not MainWidget.monitoring:
-            self.initMonitor()
+        self.initMonitor()
         self._initUI()
-
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape or event.key() == Qt.Key_Q:
@@ -31,11 +29,12 @@ class MainWidget(QWidget):
         self.isMouseDown = False
 
     def initMonitor(self):
-        if monitor.MIDI_INITIALIZED:
-            MainWidget.monitoring = True
-            print('MainWidget connected to monitor.')
-            MainWidget.monitor = monitor.Monitor()
-            MainWidget.monitor.start()
+        if not BaseWidget.monitoring:
+            if monitor.MIDI_INITIALIZED:
+                BaseWidget.monitoring = True
+                print('BaseWidget connected to monitor.')
+                BaseWidget.monitor = monitor.Monitor()
+                BaseWidget.monitor.start()
 
     def center(self):
         self.screenX = QApplication.desktop().width()
@@ -64,7 +63,8 @@ class MainWidget(QWidget):
 
     def _initUI(self):
         self.isMouseDown = False
-        self.isTransparent = False
-        if self.isTransparent:
-            self.setWindowFlag(Qt.FramelessWindowHint)
-            self.setAttribute(Qt.WA_TranslucentBackground)
+        self.opacity = 1.0
+        # if self.isTransparent:
+        #     self.setWindowFlag(Qt.FramelessWindowHint)
+
+

@@ -16,7 +16,7 @@ sustainPedalDown = False
 pressedNotes = set()
 sustainedNotes = set()
 currentChords = []
-
+midiIn = rt.MidiIn()
 
 class KeyDetector:
     WINDOW_SIZE = 16
@@ -73,11 +73,6 @@ def initRtMidi(port=DEFAULT_MIDI_IN_PORT):
         port = 0
 
     if portCount:
-        print('Available MIDI IN ports:')
-        for i in range(portCount):
-            # print('\t', midiin.getPortName(i))
-            print('\t', midiIn.get_port_name(i))
-
         # midiin.openPort(port)
         midiIn.open_port(port)
         print('started monitoring MIDI input... port {}'.format(port))

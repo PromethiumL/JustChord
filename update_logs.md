@@ -43,7 +43,7 @@
 - More scales...
 
 ## Chord Indicator 0.4
-- Now the `MainWindow` is changed to `MainWidget` for better layout.
+- Now the `MainWindow` is changed to `BaseWidget` for better layout.
 - The Chord's name now is a pair (root, name)
 - Bigger root note and auto repainting.
 - Rest Chords showed below (optional)

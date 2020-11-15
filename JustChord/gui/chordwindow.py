@@ -1,5 +1,5 @@
 # coding:utf-8
-from .mainwidget import *
+from .basewidget import *
 from JustChord.core import chord
 import copy
 
@@ -21,7 +21,7 @@ Usage:
 """
 
 
-class ChordWindow(MainWidget):
+class ChordWindow(BaseWidget):
     DEFAULT_CONFIG = {
         'allowSlashChord': True,
         'chordFontSize': 40,
@@ -37,8 +37,9 @@ class ChordWindow(MainWidget):
         'autoKeyDetection': True
     }
 
-    def __init__(self, config=DEFAULT_CONFIG):
+    def __init__(self, parent, config=DEFAULT_CONFIG):
         super().__init__()
+        self.setParent(parent)
         for conf in ChordWindow.DEFAULT_CONFIG.items():
             self.__setattr__(*conf)
         if config != ChordWindow.DEFAULT_CONFIG:
@@ -50,7 +51,7 @@ class ChordWindow(MainWidget):
         self.show()
 
     def connectMonitor(self):
-        MainWidget.monitor.trigger.connect(self.updateChordLabel)
+        BaseWidget.monitor.trigger.connect(self.updateChordLabel)
 
     def toggleMoreResults(self, flag=None):
         if flag is not None:
@@ -85,7 +86,7 @@ class ChordWindow(MainWidget):
             for l in self.chordlabels:
                 l[0].setPalette(self.pl)
                 l[1].setPalette(self.pl)
-            self.pl.setColor(QPalette.WindowText, col.darker(200))
+            self.pl.setColor(QPalette.WindowText, col.darker(150))
             self.keyLabel.setPalette(self.pl)
 
     def keyPressEvent(self, event):
@@ -122,8 +123,8 @@ class ChordWindow(MainWidget):
             self.updateKeyLabel()
 
         if event.key() == Qt.Key_R:
-            MainWidget.sustained_notes = set([])
-            MainWidget.pressed_notes = set([])
+            BaseWidget.sustained_notes = set([])
+            BaseWidget.pressed_notes = set([])
 
         if event.key() == Qt.Key_N:
             self.useRomanNotation = not self.useRomanNotation
@@ -300,6 +301,8 @@ class ChordWindow(MainWidget):
         fontAction = contextMenu.addAction("Font...")
         fontAction.triggered.connect(self.fontDialog)
 
+        contextMenu.addSeparator()
+
         # Results
         moreResultsAction = contextMenu.addAction(
             "Hide More Results" if self.showRestChords else "Show More Results"
@@ -311,6 +314,7 @@ class ChordWindow(MainWidget):
         contextMenu.addAction(toggleKeyLabel)
         toggleKeyLabel.triggered.connect(self.toggleKeyLabel)
 
+        contextMenu.addSeparator()
 
         # KeySettings
         keyMenu = contextMenu.addMenu("Key Settings")
@@ -322,7 +326,13 @@ class ChordWindow(MainWidget):
             action = QAction(k, keyMenu, checkable=True, checked=(k == self.keyName and not self.autoKeyDetection))
             action.triggered.connect(lambda checked, name=k: self.keyNameClicked(name))
             keyMenu.addAction(action)
-        #
+
+        contextMenu.addSeparator()
+
+        # Quit
+        quit_btn = contextMenu.addAction('Quit')
+        quit_btn.triggered.connect(lambda: QApplication.instance().quit())
+
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
 
     # ---------------

@@ -1,4 +1,4 @@
-from JustChord.gui.gui import main
+from JustChord.gui.appwindow import JustChordApp
 
 if __name__ == '__main__':
-	main()
+	app = JustChordApp()

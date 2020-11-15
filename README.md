@@ -13,7 +13,7 @@ Uses RtMidi for driver and PyQt for widgets
 
 ## Installation
 
-on Python 3.6 or above, install `python-rtmidi` and `pyqt5`:
+on Python 3.6-3.8, install `python-rtmidi` and `pyqt5`:
 
 ```bash
 $ pip3 -r install requirements.txt
@@ -24,11 +24,11 @@ $ pip3 -r install requirements.txt
 ```
 $ python3 main.py
 ```
-- Two widgets: staff and chords are on the left and right by default. Drag them to where ever you want.
+- Two widgets: staff and chords are on the left and right by default. Drag them to whereever you want.
 
-- Right click on chords (only chords, currently) for more options. 
+- **Right click** on each widget for more options, color, font, etc.
 
-- Default midi input port can be modified in `gui.py`
+- Use mouse wheel to adjust window opacity. 
 
 - The Chord dictionary is stored in `./core/constants.py`. You can add new entry by copy/paste an existing line.
 

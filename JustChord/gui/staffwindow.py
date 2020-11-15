@@ -5,7 +5,7 @@ from PyQt5 import QtCore, QtWidgets, QtSvg
 from PyQt5.QtGui import *
 
 from JustChord.core import chord
-from .mainwidget import MainWidget, monitor
+from .basewidget import BaseWidget, monitor
 
 DEFAULT_LINE_GAP = 30
 DEFAULT_WIDTH = 20 * DEFAULT_LINE_GAP
@@ -113,13 +113,14 @@ class NoteWidget(QtSvg.QSvgWidget):
             self.accidentalWidget.show()
 
 
-class StaffWindow(MainWidget):
+class StaffWindow(BaseWidget):
     DEFAULT_CONFIG = {
         'keyName': 'C'
     }
 
-    def __init__(self, config=DEFAULT_CONFIG):
+    def __init__(self, parent, config=DEFAULT_CONFIG):
         super().__init__()
+        self.setParent(parent)
         for conf in StaffWindow.DEFAULT_CONFIG.items():
             self.__setattr__(*conf)
         if config != StaffWindow.DEFAULT_CONFIG:
@@ -129,7 +130,7 @@ class StaffWindow(MainWidget):
         self.setGeometry(800, 400, 500, 500)
         # self.show()
         if __name__ != '__main__':
-            MainWidget.monitor.trigger.connect(self.updateNotes)
+            BaseWidget.monitor.trigger.connect(self.updateNotes)
 
     def updateNotes(self):
         self.keyName = monitor.KeyDetector.currentKey

@@ -144,7 +144,7 @@ class MidiSelectionDialog(QDialog):
         self.setWindowTitle('MIDI In Settings')
         vlayout = QVBoxLayout(self)
 
-        hintLabel = QLabel('Select a MIDI In device:')
+        hintLabel = QLabel('Plugin your MIDI keyboard (or a virtual one) and select it below:')
 
         self.midiView = QListWidget(self)
         midiView = self.midiView

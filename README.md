@@ -4,6 +4,7 @@ A real-time (Midi) visualization tool for chords with grand staff view.
 
 Uses RtMidi for driver and PyQt for widgets 
 
+![](./sample.png)
 ## Features
 
 - Chord Recognition
@@ -24,6 +25,7 @@ $ pip3 -r install requirements.txt
 ```
 $ python3 main.py
 ```
+
 - Two widgets: staff and chords are on the left and right by default. Drag them to whereever you want.
 
 - **Right click** on each widget for more options, color, font, etc.

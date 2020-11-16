@@ -72,14 +72,14 @@ def getPitchName(pitch, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE, with_octav
 
 
 def addIntervalToNoteName(name, interval):
-    if interval not in globals():
+    if interval not in INTERVAL_SIZE:
         raise Exception("Incorrect interval: {}".format(interval))
 
     pitch = getPitchNumber(name)
     letter = name[0]
     octave = ''.join(list(filter(lambda x: ord('0') <= ord(x) <= ord('9'), list(name))))
     # print("name: {}".format(octave))
-    newPitch = pitch + eval(interval)
+    newPitch = pitch + INTERVAL_SIZE[interval]
     letterShift = int(interval[1:]) - 1
     newLetter = "ABCDEFG"[("ABCDEFG".index(letter) + letterShift) % 7]
     return getPitchName(newPitch, with_octave=(octave != ''), specified_letter=newLetter)
@@ -188,8 +188,8 @@ class Chord:
         self.recognized = False
         s = set()
         for item in CHORD_DATA:
-            # print('{} vs {}'.format(self.intervals, set(map(lambda intervalName:eval(intervalName), item[0]))))
-            if self.intervals == set(map(lambda intervalName: (eval(intervalName) % 12), item[0])):
+            # print('{} vs {}'.format(self.intervals, set(map(lambda intervalName:INTERVAL_SIZE[intervalName], item[0]))))
+            if self.intervals == set(map(lambda intervalName: (INTERVAL_SIZE[intervalName] % 12), item[0])):
                 self.recognized = True
                 self.intervalNames = item[0]
                 s.add((item[2], item[1]))

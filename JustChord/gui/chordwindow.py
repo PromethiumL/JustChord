@@ -3,10 +3,6 @@ from .basewidget import *
 from JustChord.core import chord
 import copy
 
-# import sys
-# import os
-# sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 CHORDLABEL_TIP = """
 Usage:
     Move: Arrow keys
@@ -209,7 +205,7 @@ class ChordWindow(BaseWidget):
                 if not self.showRestChords:
                     break
 
-            self.repaint()
+            self.update()
         except Exception as e:
             print(e)
 

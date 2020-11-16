@@ -1,11 +1,9 @@
 import re
-import sys
 
-from PyQt5 import QtCore, QtWidgets, QtSvg
-from PyQt5.QtGui import *
+from PyQt5 import QtSvg
 
 from JustChord.core import chord
-from .basewidget import BaseWidget, monitor
+from .basewidget import *
 
 DEFAULT_LINE_GAP = 30
 DEFAULT_WIDTH = 20 * DEFAULT_LINE_GAP
@@ -19,7 +17,7 @@ _accidental_widget_vertical_offsets = {
     None: 0,
     'sharp': -0.5,
     'flat': -1,
-    'double_sharp':0,
+    'double_sharp': 0,
     'double_flat': -0.5,
     'natural': -0.5
 }
@@ -214,7 +212,7 @@ class StaffWindow(BaseWidget):
         self.lineGap = 20
         self.staffWidth = 20 * self.lineGap
         self.strokeWidth = self.lineGap * 0.1
-        self.pen = QPen(QtCore.Qt.black, self.strokeWidth, QtCore.Qt.SolidLine)
+        self.pen = QPen(Qt.black, self.strokeWidth, Qt.SolidLine)
         self.staffCenterY = self.height() / 2
         self.noteWidgets = {}
         self.notes = set()

@@ -3,7 +3,6 @@ import traceback
 from .chordwindow import *
 from .staffwindow import *
 
-
 class JustChordMainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -109,7 +108,7 @@ class JustChordApp(QApplication):
     def __init__(self):
         try:
             super(JustChordApp, self).__init__(sys.argv)
-            self.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+            self.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
             # Init MIDI
             self.midi_in_wizard(force=True)
@@ -139,7 +138,7 @@ class JustChordApp(QApplication):
         port = MidiSelectionDialog().exec()
         if port >= 0:
             print('using midi port', port)
-            monitor.initRtMidi(port=default_midi_port)
+            monitor.initRtMidi(port=port)
         elif force:
             popup = QMessageBox()
             popup.setWindowTitle('Alert')

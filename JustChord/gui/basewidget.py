@@ -1,7 +1,6 @@
 # coding:utf-8
 from .imports import *
 
-
 class BaseWidget(QWidget):
     monitoring = False
     monitor = None

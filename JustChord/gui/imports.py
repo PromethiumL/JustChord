@@ -11,5 +11,4 @@ def debug(func):
     def foo(*args, **kwargs):
         print(func.__name__, args, kwargs)
         return func(*args, **kwargs)
-
     return foo

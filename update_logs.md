@@ -1,3 +1,10 @@
+
+
+## Just Chord! 1.0.1
+- Added midi in selection dialog
+- Windows opacity. Adjusted by mouse wheel.
+- Frameless main window, thus nicer appearance
+
 ## Just Chord! 1.0
 - I finally decide to rename it to `Just Chord` and publish it on github. It's hard to give it a new name!
 - Added context menu for `chordwindow`

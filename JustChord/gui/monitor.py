@@ -64,6 +64,8 @@ class KeyDetector:
 def initRtMidi(port=DEFAULT_MIDI_IN_PORT):
     global midiIn
     # midiin = rt.RtMidiIn()
+    midiIn.close_port()
+
     midiIn = rt.MidiIn()
     # portCount = midiin.getPortCount()
     portCount = midiIn.get_port_count()
@@ -93,6 +95,8 @@ class Monitor(QThread):
     def run(self):
         global midiIn
         while True:
+            if not midiIn.is_port_open():
+                continue
             # msg = midiin.getMessage()
             msg = midiIn.get_message()
             if msg:

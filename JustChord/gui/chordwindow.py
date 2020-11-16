@@ -329,6 +329,9 @@ class ChordWindow(BaseWidget):
 
         contextMenu.addSeparator()
 
+        midi_settings = contextMenu.addAction('Midi in Device...')
+        midi_settings.triggered.connect(lambda: QApplication.instance().midi_in_wizard())
+
         # Quit
         quit_btn = contextMenu.addAction('Quit')
         quit_btn.triggered.connect(lambda: QApplication.instance().quit())

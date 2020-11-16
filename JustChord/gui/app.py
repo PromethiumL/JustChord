@@ -104,20 +104,16 @@ default_midi_port = 0
 
 
 class JustChordApp(QApplication):
+    select_midi_mort_signal = pyqtSignal(str)
+
     def __init__(self):
         try:
             super(JustChordApp, self).__init__(sys.argv)
             self.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
 
             # Init MIDI
-            portCount = monitor.midiIn.get_port_count()
-            if portCount == 0:
-                raise Exception('No midi in found. Continue?')
-                # continue
-            else:
-                port = MidiSelectionDialog().exec()
-                print('using midi port', port)
-                monitor.initRtMidi(port=default_midi_port)
+            self.midi_in_wizard(force=True)
+            # self.select_midi_mort_signal.connect(self.midi_in_wizard)
 
             # Load Font
             font_id = QFontDatabase.addApplicationFont('./assets/Gothic_A1/GothicA1-Light.ttf')
@@ -136,6 +132,24 @@ class JustChordApp(QApplication):
         except Exception as e:
             print(e)
             traceback.print_exc()
+
+    def midi_in_wizard(self, force=False):
+        # print('MidiInSettings')
+        portCount = monitor.midiIn.get_port_count()
+        port = MidiSelectionDialog().exec()
+        if port >= 0:
+            print('using midi port', port)
+            monitor.initRtMidi(port=default_midi_port)
+        elif force:
+            popup = QMessageBox()
+            popup.setWindowTitle('Alert')
+            popup.setText('No MIDI input device is selected, which is currently not supported.')
+            popup.setIcon(QMessageBox.Information)
+            popup.addButton('Exit', QMessageBox.AcceptRole)
+            popup.exec()
+            sys.exit(0)
+
+
 
 
 class MidiSelectionDialog(QDialog):

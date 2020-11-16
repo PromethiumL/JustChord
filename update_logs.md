@@ -1,4 +1,6 @@
-
+## Just Chord! 1.0.2
+- Greatly boosted performance by replacing all the `eval` calls to `dict` queries.
+- Fixed the bug of midi selection not working
 
 ## Just Chord! 1.0.1
 - Added midi in selection dialog

@@ -3,6 +3,7 @@ import traceback
 from .chordwindow import *
 from .staffwindow import *
 
+
 class JustChordMainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -36,41 +37,42 @@ class JustChordMainWindow(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         # self.setAttribute(Qt.WA_AlwaysStackOnTop)
 
-        """Controls"""
-        self.position_controls = []
-        self.show_position_control = False
-        for handle in "TL,TR,BL,BR".split(","):
-            control = QWidget(self)
-            control.setObjectName(handle)
-            control.setFixedSize(20, 20)
-            control.setStyleSheet('border: 3px solid #6f6; border-radius: 5px; background-color: #373; mouse:pointer;')
+        """Size Grips"""
+        self.size_grips = []
+        self.show_size_grips = True
+        for position in "TL,TR,BL,BR".split(","):
+            grip = QSizeGrip(self)
+            grip.mouseMoveEvent = lambda *args: None
+            grip.setObjectName(position)
+            grip.setFixedSize(20, 20)
+            # grip.setStyleSheet('border: 3px solid #6f6; border-radius: 5px; background-color: #373; mouse:pointer;')
             w, h = self.width(), self.height()
-            if handle == 'TL':
-                control.move(0, 0)
-            if handle == 'TR':
-                control.move(w - 20, 0)
-            if handle == 'BL':
-                control.move(0, h - 20)
-            if handle == 'BR':
-                control.move(w - 20, h - 20)
-            control.setVisible(self.show_position_control)
-            self.position_controls.append(control)
+            if position == 'TL':
+                grip.move(0, 0)
+            if position == 'TR':
+                grip.move(w - 20, 0)
+            if position == 'BL':
+                grip.move(0, h - 20)
+            if position == 'BR':
+                grip.move(w - 20, h - 20)
+            grip.setVisible(self.show_size_grips)
+            self.size_grips.append(grip)
 
         self.show()
 
-    def togglePositionControl(self):
+    def toggleSizeGrips(self):
         print('triggered')
-        self.show_position_control = not self.show_position_control
-        for control in self.position_controls:
-            control.setVisible(self.show_position_control)
+        self.show_size_grips = not self.show_size_grips
+        for control in self.size_grips:
+            control.setVisible(self.show_size_grips)
 
     def contextMenuEvent(self, e):
         contextMenu = QMenu(self)
         # controls
 
-        toggle_control = QAction('Show Resizing Controls', contextMenu, checkable=True,
-                                 checked=self.show_position_control)
-        toggle_control.triggered.connect(self.togglePositionControl)
+        toggle_control = QAction('Show Size Grips', contextMenu, checkable=True,
+                                 checked=self.show_size_grips)
+        toggle_control.triggered.connect(self.toggleSizeGrips)
         contextMenu.addAction(toggle_control)
         contextMenu.addSeparator()
 
@@ -82,6 +84,9 @@ class JustChordMainWindow(QWidget):
     def mousePressEvent(self, e):
         if e.button == Qt.LeftButton:
             self.isMouseDown = True
+        self.p = e.globalPos()
+
+    def mouseClickEvent(self, e):
         self.p = e.globalPos()
 
     def mouseMoveEvent(self, e):
@@ -97,6 +102,20 @@ class JustChordMainWindow(QWidget):
         if self.opacity < 0: self.opacity = 0
         if self.opacity > 255: self.opacity = 255
         self.container.setStyleSheet('.QWidget {{background-color: rgb(255, 255, 255, {});}}'.format(self.opacity))
+
+    def resizeEvent(self, e):
+        for grip in self.size_grips:
+            w, h = self.width(), self.height()
+            if grip.objectName() == 'TL':
+                grip.move(0, 0)
+            if grip.objectName() == 'TR':
+                grip.move(w - 20, 0)
+            if grip.objectName() == 'BL':
+                grip.move(0, h - 20)
+            if grip.objectName() == 'BR':
+                grip.move(w - 20, h - 20)
+            # grip.setVisible(self.show_size_grips)
+
 
 
 default_midi_port = 0
@@ -147,8 +166,6 @@ class JustChordApp(QApplication):
             popup.addButton('Exit', QMessageBox.AcceptRole)
             popup.exec()
             sys.exit(0)
-
-
 
 
 class MidiSelectionDialog(QDialog):

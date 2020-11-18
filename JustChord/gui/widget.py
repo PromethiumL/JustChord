@@ -1,7 +1,8 @@
 # coding:utf-8
 from .imports import *
 
-class BaseWidget(QWidget):
+
+class Widget(QFrame):
     monitoring = False
     monitor = None
 
@@ -26,14 +27,15 @@ class BaseWidget(QWidget):
 
     def mouseReleaseEvent(self, e):
         self.isMouseDown = False
+        # self.setStyleSheet('.Widget {background: #888;}')
 
     def initMonitor(self):
-        if not BaseWidget.monitoring:
+        if not Widget.monitoring:
             if monitor.MIDI_INITIALIZED:
-                BaseWidget.monitoring = True
-                print('BaseWidget connected to monitor.')
-                BaseWidget.monitor = monitor.Monitor()
-                BaseWidget.monitor.start()
+                Widget.monitoring = True
+                print('Widget connected to monitor.')
+                Widget.monitor = monitor.Monitor()
+                Widget.monitor.start()
 
     def center(self):
         self.screenX = QApplication.desktop().width()
@@ -65,5 +67,3 @@ class BaseWidget(QWidget):
         self.opacity = 1.0
         # if self.isTransparent:
         #     self.setWindowFlag(Qt.FramelessWindowHint)
-
-

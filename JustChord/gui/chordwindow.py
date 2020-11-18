@@ -1,5 +1,5 @@
 # coding:utf-8
-from .basewidget import *
+from .widget import *
 from JustChord.core import chord
 import copy
 
@@ -17,7 +17,7 @@ Usage:
 """
 
 
-class ChordWindow(BaseWidget):
+class ChordWindow(Widget):
     DEFAULT_CONFIG = {
         'allowSlashChord': True,
         'chordFontSize': 40,
@@ -47,7 +47,7 @@ class ChordWindow(BaseWidget):
         self.show()
 
     def connectMonitor(self):
-        BaseWidget.monitor.trigger.connect(self.updateChordLabel)
+        Widget.monitor.trigger.connect(self.updateChordLabel)
 
     def toggleMoreResults(self, flag=None):
         if flag is not None:
@@ -119,8 +119,8 @@ class ChordWindow(BaseWidget):
             self.updateKeyLabel()
 
         if event.key() == Qt.Key_R:
-            BaseWidget.sustained_notes = set([])
-            BaseWidget.pressed_notes = set([])
+            Widget.sustained_notes = set([])
+            Widget.pressed_notes = set([])
 
         if event.key() == Qt.Key_N:
             self.useRomanNotation = not self.useRomanNotation
@@ -280,6 +280,9 @@ class ChordWindow(BaseWidget):
         self.keyLabel.setStyleSheet(f'font-size: {int(self.chordFontSize * self.restChordsScaleFactor)}pt;')
         self.keyLabel.setPalette(self.pl)
         self.keyLabel.adjustSize()
+
+        # self.setStyleSheet('.ChordWindow {border: 2px solid black;background-color: #333}')
+        # self.setBackgroundRole(QPalette.Background)
         self.show()
 
     def keyNameClicked(self, keyName):

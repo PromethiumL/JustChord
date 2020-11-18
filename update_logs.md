@@ -1,3 +1,6 @@
+## Just Chord! 1.0.10
+- Fixed wrong accidental displaying bug. 
+
 ## Just Chord! 1.0.9
 - Improvement on performance of `staffwidget` by reusing vacant widgets for less reloading.
 - Slightly adjusted the offset of double-flat accidental sign.
@@ -56,7 +59,7 @@
 - More scales...
 
 ## Chord Indicator 0.4
-- Now the `MainWindow` is changed to `BaseWidget` for better layout.
+- Now the `MainWindow` is changed to `Widget` for better layout.
 - The Chord's name now is a pair (root, name)
 - Bigger root note and auto repainting.
 - Rest Chords showed below (optional)

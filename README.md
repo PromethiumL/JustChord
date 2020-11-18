@@ -1,5 +1,5 @@
 # JustChord
-[![version](https://img.shields.io/badge/version-1.0.9_dev-green.svg)](https://semver.org)
+[![version](https://img.shields.io/badge/version-1.0.10_dev-green.svg)](https://semver.org)
 
 A real-time (Midi) visualization tool for chords with grand staff view.
 
@@ -26,7 +26,7 @@ $ pip3 install -r requirements.txt
 $ python3 main.py
 ```
 
-- Two widgets: staff and chords are on the left and right by default. Drag them to whereever you want.
+- Two widgets: staff and chords are on the left and right by default. Drag them to wherever you want.
 
 - **Right click** on each widget for more options, color, font, midi device selection etc.
 

@@ -3,7 +3,7 @@ import re
 from PyQt5 import QtSvg
 
 from JustChord.core import chord
-from .basewidget import *
+from .widget import *
 
 DEFAULT_LINE_GAP = 30
 DEFAULT_WIDTH = 20 * DEFAULT_LINE_GAP
@@ -73,6 +73,9 @@ class NoteWidget(QtSvg.QSvgWidget):
             widget.setFixedHeight(self.parent().lineGap * 2 * accidental_scaling_factors[t][1])
             self.accidentalType = t
             # widget.setStyleSheet("border: 1px solid red;")
+        elif t is None:
+            self.accidentalType = None
+            self.accidentalWidget.setVisible(False)
 
     def setCenterPosition(self, x=None, y=None, w=None, h=None):
         if x is None:
@@ -111,7 +114,7 @@ class NoteWidget(QtSvg.QSvgWidget):
             self.accidentalWidget.show()
 
 
-class StaffWindow(BaseWidget):
+class StaffWindow(Widget):
     DEFAULT_CONFIG = {
         'keyName': 'C'
     }
@@ -131,7 +134,7 @@ class StaffWindow(BaseWidget):
         self.setGeometry(800, 400, 500, 500)
         # self.show()
         if __name__ != '__main__':
-            BaseWidget.monitor.trigger.connect(self.updateNotes)
+            Widget.monitor.trigger.connect(self.updateNotes)
 
     def updateNotes(self):
         self.keyName = monitor.KeyDetector.currentKey
@@ -338,7 +341,8 @@ class StaffWindow(BaseWidget):
                 elif 'n' in acdlString:
                     currentNote.setAccidentalType('natural')
                 currentNote.move_accidental_widget_with_x_offset()
-
+            else:
+                currentNote.setAccidentalType(None)
             # Note head overlapping detection
             if i > 0 and (prevNote.pos().y() - positionY) < 1:  # 'm2/M2' intervals
                 if prevNote.pos().x() <= currentNote.pos().x():  # this note not having been shifted to the right yet
@@ -384,8 +388,8 @@ class StaffWindow(BaseWidget):
 
             currentNote.show()
 
-    def respellNotes(self):
-        pass
+    # def respellNotes(self):
+    #     pass
 
     def getAccidentalInfoInKey(self, noteName, keyName):
         """This deals with the accidentals."""
@@ -407,6 +411,7 @@ class StaffWindow(BaseWidget):
             return ''
         if currentAccidental == 'n' and actualAccidental == '':
             return ''
+        print(noteName, currentAccidental)
         return currentAccidental
 
     def resizeEvent(self, e):

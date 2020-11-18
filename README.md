@@ -1,5 +1,5 @@
 # JustChord
-[![version](https://img.shields.io/badge/version-1.0.8_dev-green.svg)](https://semver.org)
+[![version](https://img.shields.io/badge/version-1.0.9_dev-green.svg)](https://semver.org)
 
 A real-time (Midi) visualization tool for chords with grand staff view.
 
@@ -38,5 +38,5 @@ $ python3 main.py
 
 I'm still trying to improve on details, and make this program's logical structure better to understand.
 
-Please feel free to create issues or make any comments. 
+Please feel free to submit issues or make any comments. 
 

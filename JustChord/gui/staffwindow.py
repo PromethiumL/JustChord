@@ -18,7 +18,7 @@ _accidental_widget_vertical_offsets = {
     'sharp': -0.5,
     'flat': -1,
     'double_sharp': 0,
-    'double_flat': -0.5,
+    'double_flat': -1,
     'natural': -0.5
 }
 
@@ -124,6 +124,9 @@ class StaffWindow(BaseWidget):
         if config != StaffWindow.DEFAULT_CONFIG:
             for conf in config.items():
                 self.__setattr__(*conf)
+
+        self.vacant_components = set()  # recycling useless components for less reloading
+
         self.initUI()
         self.setGeometry(800, 400, 500, 500)
         # self.show()
@@ -215,7 +218,7 @@ class StaffWindow(BaseWidget):
         self.pen = QPen(Qt.black, self.strokeWidth, Qt.SolidLine)
         self.staffCenterY = self.height() / 2
         self.noteWidgets = {}
-        self.notes = set()
+        self.notes = set()  # set of note name: str
         self.keySignatures = []
 
         self.gClef = QtSvg.QSvgWidget(self)
@@ -278,7 +281,11 @@ class StaffWindow(BaseWidget):
             pass
         # print("name: {}".format(name))
         self.notes.add(name)
-        n = NoteWidget(self)
+        if len(self.vacant_components) > 0:
+            n = list(self.vacant_components)[0]
+            self.vacant_components.discard(n)  # so it's not vacant any more
+        else:
+            n = NoteWidget(self)  # create new one if no vacant note widget exists
         n.setCenterPosition(
             x=self.width() / 2,
             y=self.height() / 2,
@@ -288,9 +295,18 @@ class StaffWindow(BaseWidget):
         self.noteWidgets[name] = n
 
     def removeNote(self, name):
-        if self.noteWidgets[name].accidentalType != None:
-            self.noteWidgets[name].accidentalWidget.deleteLater()
-        self.noteWidgets[name].deleteLater()
+        note = self.noteWidgets[name]
+        # if note.accidentalType is not None:
+        #     note.accidentalWidget.deleteLater()
+        # note.deleteLater()
+        note.setVisible(False)
+        note.accidentalWidget.setVisible(False)
+
+        # Two styles below are used for marking REUSED widgets
+        # note.setStyleSheet('border: 1px solid red')
+        # note.accidentalWidget.setStyleSheet('border: 1px solid red')
+
+        self.vacant_components.add(note)
         del self.noteWidgets[name]
         self.notes.discard(name)
 

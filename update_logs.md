@@ -1,4 +1,8 @@
-## Just Chord! 1.0.2
+## Just Chord! 1.0.9
+- Improvement on performance of `staffwidget` by reusing vacant widgets for less reloading.
+- Slightly adjusted the offset of double-flat accidental sign.
+
+## Just Chord! 1.0.8
 - Greatly boosted performance by replacing all the `eval` calls to `dict` queries.
 - Fixed the bug of midi selection not working
 

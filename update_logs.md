@@ -1,3 +1,6 @@
+## Just Chord! 1.0.11
+- Fixed some wrong chord name.
+
 ## Just Chord! 1.0.10
 - Fixed wrong accidental displaying bug. 
 

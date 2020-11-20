@@ -1,5 +1,5 @@
 # JustChord
-[![version](https://img.shields.io/badge/version-1.0.10_dev-green.svg)](https://semver.org)
+[![version](https://img.shields.io/badge/version-1.0.11_dev-green.svg)](https://semver.org)
 
 A real-time (Midi) visualization tool for chords with grand staff view.
 

@@ -392,7 +392,7 @@ SCALE_DATA = [
     ({'U1', 'M2', 'M3', 'A4', 'A5', 'A6'}, 'Whole Tone Scale', 1),
     ({'U1', 'A2', 'M3', 'P5', 'A5', 'M7'}, 'Augmented Scale', 1),
     ({'U1', 'M2', 'm3', 'M3', 'P5', 'M6'}, 'Major Blues Scale', 1),
-    ({'U1', 'm3', 'P4', 'A4', 'P5', 'm7'}, 'Major Blues Scale', 1),
+    ({'U1', 'm3', 'P4', 'A4', 'P5', 'm7'}, 'Minor Blues Scale', 1),
     ({'U1', 'M2', 'm3', 'P4', 'A4', 'A5', 'M6', 'M7'}, 'WH Diminished Scale', 1),
     ({'U1', 'm2', 'm3', 'M3', 'A4', 'P5', 'M6', 'm7'}, 'HW Diminished Scale', 1),
     ({'U1', 'M2', 'm3', 'M3', 'P5', 'M6', 'm7', 'M7'}, 'Dominant Diminished Scale', 1),

@@ -3,7 +3,7 @@ import re
 from PyQt5 import QtSvg
 
 from JustChord.core import chord
-from .widget import *
+from JustChord.gui.widget import *
 
 DEFAULT_LINE_GAP = 30
 DEFAULT_WIDTH = 20 * DEFAULT_LINE_GAP
@@ -47,7 +47,7 @@ class NoteWidget(QtSvg.QSvgWidget):
     def __init__(self, parent):
         super().__init__()
         self.setParent(parent)
-        self.load('./assets/whole_note.svg')
+        self.load(resource_path('./assets/whole_note.svg'))
         self.accidentalWidget = QtSvg.QSvgWidget()
         self.accidentalWidget.setParent(self.parent())
         self.accidentalType = None
@@ -68,7 +68,7 @@ class NoteWidget(QtSvg.QSvgWidget):
     def setAccidentalType(self, t=None):
         if t in {'sharp', 'flat', 'double_sharp', 'double_flat', 'natural'}:
             widget = self.accidentalWidget
-            widget.load('./assets/{}.svg'.format(t))
+            widget.load(resource_path('./assets/{}.svg'.format(t)))
             widget.setFixedWidth(self.parent().lineGap * accidental_scaling_factors[t][0])
             widget.setFixedHeight(self.parent().lineGap * 2 * accidental_scaling_factors[t][1])
             self.accidentalType = t
@@ -214,7 +214,7 @@ class StaffWindow(Widget):
                     y += self.lineGap * deltaY
 
     def initUI(self):
-        print(sys.path)
+        # print(sys.path)
         self.lineGap = 20
         self.staffWidth = 20 * self.lineGap
         self.strokeWidth = self.lineGap * 0.1
@@ -225,11 +225,11 @@ class StaffWindow(Widget):
         self.keySignatures = []
 
         self.gClef = QtSvg.QSvgWidget(self)
-        self.gClef.load('./assets/G_clef.svg')
+        self.gClef.load(resource_path('./assets/G_clef.svg'))
         # self.gClef.setStyleSheet("border: 1px solid red;")
 
         self.fClef = QtSvg.QSvgWidget(self)
-        self.fClef.load('./assets/F_clef.svg')
+        self.fClef.load(resource_path('./assets/F_clef.svg'))
         # self.fClef.setStyleSheet("border: 1px solid red;")
         self.drawStaff()
         self.drawNotes()
@@ -264,7 +264,7 @@ class StaffWindow(Widget):
             for name in ['sharp', 'flat']:
                 for i in range(7):
                     svg = QtSvg.QSvgWidget(self)
-                    svg.load('./assets/{}.svg'.format(name))
+                    svg.load(resource_path('./assets/{}.svg'.format(name)))
                     svg.setVisible(False)
                     self.keySignatures[clef][name].append(svg)
         self.setKeySignatures(self.keyName)
@@ -411,7 +411,7 @@ class StaffWindow(Widget):
             return ''
         if currentAccidental == 'n' and actualAccidental == '':
             return ''
-        print(noteName, currentAccidental)
+        # print(noteName, currentAccidental)
         return currentAccidental
 
     def resizeEvent(self, e):
@@ -489,7 +489,7 @@ class StaffWindow(Widget):
 
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     staffWidget = StaffWindow()
     staffWidget.addNote('C4')
     staffWidget.addNote('E4')
@@ -500,3 +500,7 @@ if __name__ == '__main__':
     staffWidget.drawNotes()
     # staffWidget.addNote(71)
     sys.exit(app.exec_())
+
+
+print('staffwindow: ')
+print(sys.path)

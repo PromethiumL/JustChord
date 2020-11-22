@@ -1,4 +1,6 @@
-from mainwidget import *
+from PyQt5.QtWidgets import QGraphicsWidget
+from JustChord.gui import *
+
 
 class WheelWindow(QGraphicsWidget):
     def __init__(self):

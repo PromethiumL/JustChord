@@ -1,5 +1,5 @@
 # coding:utf-8
-from .imports import *
+from JustChord.gui.imports import *
 
 
 class Widget(QFrame):

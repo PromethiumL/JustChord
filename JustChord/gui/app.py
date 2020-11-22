@@ -1,8 +1,8 @@
 import traceback
 
-from .chordwindow import *
-from .staffwindow import *
-from .keyboardwidget import *
+from JustChord.gui.chordwindow import *
+from JustChord.gui.staffwindow import *
+from JustChord.gui.keyboardwidget import *
 
 
 class JustChordMainWindow(QWidget):
@@ -115,7 +115,6 @@ class JustChordMainWindow(QWidget):
             # grip.setVisible(self.show_size_grips)
 
 
-
 default_midi_port = 0
 
 
@@ -132,14 +131,16 @@ class JustChordApp(QApplication):
             # self.select_midi_mort_signal.connect(self.midi_in_wizard)
 
             # Load Font
-            font_id = QFontDatabase.addApplicationFont('./assets/Gothic_A1/GothicA1-Light.ttf')
-            if font_id == -1:
-                raise Exception("default app font not found!")
+            font_id = QFontDatabase.addApplicationFont('./assets/Gothic_A1/GothicA1-Regular.ttf')
+            if font_id != -1:
+                print(QFontDatabase.applicationFontFamilies(int(font_id)))
+                # font_name = QFontDatabase.applicationFontFamilies(int(font_id))[0]
+                # print('css', 'QLabel {{ font: "{}"; }}'.format(font_name))
+                self.setStyleSheet('.QLabel { font: 24pt "Gothic A1"; }')
+            else:
+                print("default app font not found!")
+                self.setStyleSheet('.QLabel {{ font: "Arial"; }}')
 
-            print(QFontDatabase.applicationFontFamilies(int(font_id)))
-            font_name = QFontDatabase.applicationFontFamilies(int(font_id))[0]
-            # print('css', 'QLabel {{ font: "{}"; }}'.format(font_name))
-            self.setStyleSheet('.QLabel {{ font: "{}"; }}'.format(font_name))
 
             # Create Window
             jcMainWindow = JustChordMainWindow()
@@ -148,7 +149,7 @@ class JustChordApp(QApplication):
             jcKeyboardWidget = KeyboardWidget()
             jcKeyboardWidget.move(jcMainWindow.pos().x() + (jcMainWindow.width() - jcKeyboardWidget.width()) // 2,
                                   jcMainWindow.pos().y() + jcMainWindow.height())
-
+            widget.Widget.monitor.trigger.connect(jcKeyboardWidget.updateNotes)
             sys.exit(self.exec_())
 
         except Exception as e:
@@ -221,5 +222,9 @@ class MidiSelectionDialog(QDialog):
         return [monitor.midiIn.get_port_name(p) for p in range(ports)]
 
 
-if __name__ == '__main__':
+def main():
     app = JustChordApp()
+
+
+if __name__ == '__main__':
+    main()

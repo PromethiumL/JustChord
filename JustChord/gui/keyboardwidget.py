@@ -1,5 +1,5 @@
 from JustChord.gui.imports import *
-from . import widget
+from JustChord.gui import widget
 
 black_key_length_ratio = 0.6
 keyboard_offsets = [
@@ -20,6 +20,9 @@ gray_brush = QBrush(Qt.darkGray, Qt.SolidPattern)
 white_brush = QBrush(Qt.white, Qt.SolidPattern)
 green_brush = QBrush(QColor(0x32, 0xf0, 0x80), Qt.SolidPattern)
 dark_green_brush = QBrush(QColor(0x11, 0xc1, 0x57), Qt.SolidPattern)
+blue_brush = QBrush(QColor(0, 0x90, 0xff), Qt.SolidPattern)
+light_blue_brush = QBrush(QColor(0x44, 0x99, 0xff), Qt.SolidPattern)
+dark_blue_brush = QBrush(QColor(0, 0x80, 0xdd), Qt.SolidPattern)
 
 
 def is_black(pitch):
@@ -54,21 +57,35 @@ def count_accumulated_white_keys(lo, hi):
 class KeyboardWidget(QWidget):
     def __init__(self):
         super().__init__()
-
-        self.min_pitch = 60
-        self.max_pitch = 37 + 60
-        self.pressed_notes = set()
-        self.sustained_notes = set()
+        self.min_pitch = 48
+        self.max_pitch = 37 + 48
+        self.mouse_pressed_notes = set()
+        self.mouse_sustained_notes = set()
+        self.midi_pressed_notes = set()
+        self.midi_sustained_notes = set()
         self.is_sustain_down = False
         self.mouse_current_pitch = None
         self.keyboardHeight = 200  # height of the white key
         # self.setStyleSheet('.KeyboardWidget { padding: 20px; }')
 
-        self.strokeWidth = 3
+        self.strokeWidth = 2
         self.pen = QPen(Qt.darkGray, self.strokeWidth, Qt.SolidLine)
         self.painter = QPainter(self)
         self.painter.setPen(self.pen)
         self.initUI()
+        self.pixmap = QPixmap(int((self.horizontal_unit() + 1) * self.range()), int(self.keyboardHeight))
+        self.generatePixmap()
+        self.update()
+        # try:
+        #
+        # except Exception as e:
+        #     print(e)
+        #     print('cannot connect to the MIDI monitor')
+
+    def updateNotes(self):
+        # print('update notes')
+        self.midi_pressed_notes = set(monitor.pressedNotes)
+        self.midi_sustained_notes = set(monitor.sustainedNotes)
 
     def send_midi_msg_to_monitor(self, channel, pitch, velocity):
         with widget.Widget.monitor.lock:
@@ -103,49 +120,93 @@ class KeyboardWidget(QWidget):
 
     def paintEvent(self, e):
         painter = QPainter(self)
-        painter.setPen(self.pen)
+        painter.drawPixmap(QPoint(0, 0), self.pixmap)
 
         # painter.drawRect(0, 0, int(self.range() * self.horizontal_unit()), int(self.keyboardHeight))
+
+        painter.setPen(self.pen)
         self.update()
 
-        for i in range(self.range()):  # white keys
-            p = self.min_pitch + i
-            if is_black(p):
-                continue
-            else:
-                if p in self.pressed_notes:
-                    painter.setBrush(green_brush)
-                elif p in self.sustained_notes:
-                    # painter.setBrush(light_gray_brush)
-                    painter.setBrush(green_brush)
+        notes_to_draw = self.mouse_pressed_notes | self.mouse_sustained_notes | self.midi_pressed_notes | self.midi_sustained_notes
+        for p in notes_to_draw:
+            if is_white(p):
+                if p in self.midi_pressed_notes:
+                    painter.setBrush(blue_brush)
+                elif p in self.midi_sustained_notes:
+                    painter.setBrush(light_blue_brush)
                 else:
                     painter.setBrush(Qt.NoBrush)
+
+                if p in self.mouse_pressed_notes:
+                    painter.setBrush(green_brush)
+                elif p in self.mouse_sustained_notes:
+                    # painter.setBrush(light_gray_brush)
+                    painter.setBrush(green_brush)
+
                 x = count_accumulated_white_keys(self.min_pitch, p) * self.white_step()
                 painter.drawRect(
                     int(x), 0,
                     int(self.white_step()), self.keyboardHeight
                 )
-
-        for i in range(self.range()):  # black keys
-            p = self.min_pitch + i
+        for p in range(self.min_pitch, self.max_pitch + 1):
             if is_black(p):
-                if p in self.pressed_notes:
-                    painter.setBrush(green_brush)
-                elif p in self.sustained_notes:
-                    # painter.setBrush(light_gray_brush)
-                    painter.setBrush(dark_green_brush)
+                if p in self.midi_pressed_notes:
+                    painter.setBrush(light_blue_brush)
+                elif p in self.midi_sustained_notes:
+                    painter.setBrush(dark_blue_brush)
                 else:
                     painter.setBrush(gray_brush)
-                x = i * self.black_step()
+
+                if p in self.mouse_pressed_notes:
+                    painter.setBrush(green_brush)
+                elif p in self.mouse_sustained_notes:
+                    # painter.setBrush(light_gray_brush)
+                    painter.setBrush(dark_green_brush)
+                x = (p - self.min_pitch) * self.black_step()
                 painter.drawRect(
                     int(x), 0,
                     int(self.black_step()), int(self.keyboardHeight * black_key_length_ratio)
                 )
 
+        if self.is_sustain_down:
+            painter.setPen(QPen(QColor(0x32, 0xf0, 0x80), 5, Qt.SolidLine))
+
+            painter.drawLine(0, 0, self.width(), 0)
+        self.update()
+
+    def generatePixmap(self):
+        self.pixmap.fill(Qt.transparent)
+        # QColor("transparent") ?
+        painter = QPainter(self.pixmap)
+        painter.setPen(self.pen)
+        painter.setBrush(Qt.NoBrush)
+        for i in range(self.range()):  # white keys
+            p = self.min_pitch + i
+            if is_black(p):
+                continue
+            else:
+                x = count_accumulated_white_keys(self.min_pitch, p) * self.white_step()
+                painter.drawRect(
+                    int(x), 0,
+                    int(self.white_step()), self.keyboardHeight
+                )
+        painter.setBrush(gray_brush)
+        for i in range(self.range()):
+            if is_black(i + self.min_pitch):
+                x = i * self.black_step()
+                painter.drawRect(
+                    int(x), 0,
+                    int(self.black_step()), int(self.keyboardHeight * black_key_length_ratio)
+                )
+        painter.end()
+
     def resizeEvent(self, e):
         # self.resize(int(self.horizontal_unit() * self.range()), int(self.keyboardHeight))
         self.keyboardHeight = self.height()
+        self.pixmap = QPixmap(int((self.horizontal_unit() + 1) * self.range()), int(self.keyboardHeight))
+        self.generatePixmap()
         self.update()
+
 
     def keyPressEvent(self, e: QKeyEvent):
         if e.isAutoRepeat():
@@ -154,16 +215,18 @@ class KeyboardWidget(QWidget):
             self.is_sustain_down = True
             print('sustain')
 
+
     def keyReleaseEvent(self, e: QKeyEvent):
         if e.isAutoRepeat():
             return
         if e.key() == Qt.Key_Space:  # release sustain pedal
             self.is_sustain_down = False
-            for p in list(self.sustained_notes):
-                if p not in self.pressed_notes:
+            for p in list(self.mouse_sustained_notes):
+                if p not in self.mouse_pressed_notes:
                     self.note_off(p)
-                self.sustained_notes.discard(p)
+                self.mouse_sustained_notes.discard(p)
             print('released')
+
 
     def mousePressEvent(self, e: QMouseEvent):
         x = e.pos().x()
@@ -172,20 +235,23 @@ class KeyboardWidget(QWidget):
         if self.min_pitch <= pitch <= self.max_pitch:
             self.addNote(pitch)
 
+
     def removeNote(self, pitch):
-        if pitch in self.pressed_notes:
-            self.pressed_notes.discard(pitch)
+        if pitch in self.mouse_pressed_notes:
+            self.mouse_pressed_notes.discard(pitch)
         if self.is_sustain_down:
-            self.sustained_notes.add(pitch)
+            self.mouse_sustained_notes.add(pitch)
         else:
             self.note_off(pitch)
+
 
     def addNote(self, pitch):
         self.mouse_current_pitch = pitch
         self.note_on(pitch)
-        self.pressed_notes.add(pitch)
+        self.mouse_pressed_notes.add(pitch)
         if self.is_sustain_down:
-            self.sustained_notes.add(pitch)
+            self.mouse_sustained_notes.add(pitch)
+
 
     def mouseMoveEvent(self, e):  # Glissing notes
         x = e.pos().x()
@@ -197,10 +263,12 @@ class KeyboardWidget(QWidget):
             self.removeNote(self.mouse_current_pitch)
             self.addNote(pitch)
 
+
     def mouseReleaseEvent(self, e):
         pitch = self.posToPitch(e.pos().x(), e.pos().y())
-        if pitch in self.pressed_notes:
+        if pitch in self.mouse_pressed_notes:
             self.removeNote(pitch)
+
 
     def posToPitch(self, x, y):
         i = int(x // self.horizontal_unit())

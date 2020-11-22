@@ -1,5 +1,5 @@
 # coding:utf-8
-from .widget import *
+from JustChord.gui.widget import *
 from JustChord.core import chord
 import copy
 

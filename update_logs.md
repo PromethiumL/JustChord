@@ -1,3 +1,7 @@
+## Just Chord! 1.1.1
+- Fixed path problem for `pyinstaller`
+- Slightly optimized keyboard widget drawing performance using `QPixMap`
+
 ## Just Chord! 1.1.0
 - Virtual MIDI keyboard! with `space` key as the sustain pedal.
 

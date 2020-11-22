@@ -2,6 +2,7 @@ import traceback
 
 from .chordwindow import *
 from .staffwindow import *
+from .keyboardwidget import *
 
 
 class JustChordMainWindow(QWidget):
@@ -86,9 +87,6 @@ class JustChordMainWindow(QWidget):
             self.isMouseDown = True
         self.p = e.globalPos()
 
-    def mouseClickEvent(self, e):
-        self.p = e.globalPos()
-
     def mouseMoveEvent(self, e):
         p = e.globalPos()
         self.move(self.pos() + p - self.p)
@@ -130,7 +128,7 @@ class JustChordApp(QApplication):
             self.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
             # Init MIDI
-            self.midi_in_wizard(force=True)
+            self.midi_in_wizard(force=False)
             # self.select_midi_mort_signal.connect(self.midi_in_wizard)
 
             # Load Font
@@ -146,7 +144,13 @@ class JustChordApp(QApplication):
             # Create Window
             jcMainWindow = JustChordMainWindow()
 
+            # Keyboard
+            jcKeyboardWidget = KeyboardWidget()
+            jcKeyboardWidget.move(jcMainWindow.pos().x() + (jcMainWindow.width() - jcKeyboardWidget.width()) // 2,
+                                  jcMainWindow.pos().y() + jcMainWindow.height())
+
             sys.exit(self.exec_())
+
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -166,6 +170,8 @@ class JustChordApp(QApplication):
             popup.addButton('Exit', QMessageBox.AcceptRole)
             popup.exec()
             sys.exit(0)
+        else:
+            monitor.initRtMidi(port=None)
 
 
 class MidiSelectionDialog(QDialog):

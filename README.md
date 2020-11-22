@@ -1,5 +1,5 @@
 # JustChord
-[![version](https://img.shields.io/badge/version-1.0.11_dev-green.svg)](https://semver.org)
+[![version](https://img.shields.io/badge/version-1.1.0_dev-green.svg)](https://semver.org)
 
 A real-time (Midi) visualization tool for chords with grand staff view.
 
@@ -11,6 +11,7 @@ Uses RtMidi for driver and PyQt for widgets
 - Customize chord dictionary
 - Auto Key detection
 - Individual customizable widgets
+- Built-in Virtual MIDI keyboard
 
 ## Installation
 

@@ -1,5 +1,6 @@
 import rtmidi as rt
 import time
+import threading
 
 from PyQt5.QtCore import *
 
@@ -17,6 +18,7 @@ pressedNotes = set()
 sustainedNotes = set()
 currentChords = []
 midiIn = rt.MidiIn()
+
 
 class KeyDetector:
     WINDOW_SIZE = 16
@@ -70,9 +72,9 @@ def initRtMidi(port=DEFAULT_MIDI_IN_PORT):
     # portCount = midiin.getPortCount()
     portCount = midiIn.get_port_count()
 
-    if port >= portCount:
+    if port is None or port >= portCount:
         print(f'port {port} is invalid. Fallback to default port.')
-        port = 0
+        return
 
     if portCount:
         # midiin.openPort(port)
@@ -91,11 +93,15 @@ class Monitor(QThread):
     def __init__(self):
         super(Monitor, self).__init__()
         self.msg_queue = []
+        self.lock = threading.RLock()
 
     def run(self):
         global midiIn
         while True:
+            if self.msg_queue:
+                self.process_queue()
             if not midiIn.is_port_open():
+                time.sleep(CHECK_INTERVAL_MS * 0.001)
                 continue
             # msg = midiin.getMessage()
             msg = midiIn.get_message()
@@ -105,17 +111,21 @@ class Monitor(QThread):
                     continue
                 self.msg_queue.append(msg)
             else:
-                if self.msg_queue:
-                    self.process_queue()
                 time.sleep(CHECK_INTERVAL_MS * 0.001)
 
     def process_queue(self):
         while self.msg_queue:
-            self.process_message(self.msg_queue.pop(0))
+            with self.lock:
+                self.process_message(self.msg_queue.pop(0))
         global pressedNotes
         self.update(list(pressedNotes | sustainedNotes))
 
+    def append_message(self, msg):
+        with self.lock:
+            self.msg_queue.append(msg)
+
     def process_message(self, msg):
+        # print(msg)
         global sustainPedalDown
         global pressedNotes
         global sustainedNotes
@@ -157,11 +167,9 @@ class Monitor(QThread):
         if notes:
             l = chord.identifyChord(notes)
             currentChords = l
-            if len(list(filter(lambda c: c.isBlank == False, l))) == 0:
+            if len(list(filter(lambda c: not c.isBlank, l))) == 0:
                 root = chord.getPitchName(min(notes))
                 currentChords.append(chord.Chord(root, [], root, blankChord=True))
-        # else:
-        # print(''.join(s + ' ' for s in l[0].noteNames))
         self.trigger.emit('update')
 
 

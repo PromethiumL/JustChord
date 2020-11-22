@@ -1,3 +1,6 @@
+## Just Chord! 1.1.0
+- Virtual MIDI keyboard! with `space` key as the sustain pedal.
+
 ## Just Chord! 1.0.11
 - Fixed some wrong chord name.
 

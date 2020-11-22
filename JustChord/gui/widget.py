@@ -31,11 +31,12 @@ class Widget(QFrame):
 
     def initMonitor(self):
         if not Widget.monitoring:
-            if monitor.MIDI_INITIALIZED:
-                Widget.monitoring = True
-                print('Widget connected to monitor.')
-                Widget.monitor = monitor.Monitor()
-                Widget.monitor.start()
+            Widget.monitoring = True
+            print('Widget connected to monitor.')
+            Widget.monitor = monitor.Monitor()
+            Widget.monitor.start()
+            if not monitor.MIDI_INITIALIZED:
+                print('WARNING: No MIDI device is selected')
 
     def center(self):
         self.screenX = QApplication.desktop().width()

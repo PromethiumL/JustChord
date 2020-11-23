@@ -1,6 +1,9 @@
 from JustChord.gui.imports import *
 from JustChord.gui import widget
 
+import pygame.midi as midi
+import time
+
 black_key_length_ratio = 0.6
 keyboard_offsets = [
     0,
@@ -76,6 +79,11 @@ class KeyboardWidget(QWidget):
         self.pixmap = QPixmap(int((self.horizontal_unit() + 1) * self.range()), int(self.keyboardHeight))
         self.generatePixmap()
         self.update()
+
+        midi.init()
+        self.midiplayer = midi.Output(0)
+        self.midiplayer.set_instrument(4)
+
         # try:
         #
         # except Exception as e:
@@ -92,9 +100,11 @@ class KeyboardWidget(QWidget):
             widget.Widget.monitor.append_message([channel, pitch, velocity])
 
     def note_on(self, pitch, velocity=100):
+        self.midiplayer.note_on(pitch, velocity)
         self.send_midi_msg_to_monitor(0x90, pitch, velocity)
 
     def note_off(self, pitch):
+        self.midiplayer.note_off(pitch)
         self.send_midi_msg_to_monitor(0x80, pitch, 0)
 
     def midi_reset(self):
@@ -213,7 +223,7 @@ class KeyboardWidget(QWidget):
             return
         if e.key() == Qt.Key_Space:  # hold sustain pedal
             self.is_sustain_down = True
-            print('sustain')
+            # print('sustain')
 
 
     def keyReleaseEvent(self, e: QKeyEvent):
@@ -225,7 +235,7 @@ class KeyboardWidget(QWidget):
                 if p not in self.mouse_pressed_notes:
                     self.note_off(p)
                 self.mouse_sustained_notes.discard(p)
-            print('released')
+            # print('released')
 
 
     def mousePressEvent(self, e: QMouseEvent):

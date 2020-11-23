@@ -1,3 +1,7 @@
+## Just Chord! 1.1.3
+- Introduced `dataclass` for easier confguration modification. This requires
+python 3.7 or higher versions.
+
 ## Just Chord! 1.1.2
 - Added default midi playback when using mouse on keyboardwidget
 

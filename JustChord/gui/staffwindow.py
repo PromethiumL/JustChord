@@ -5,14 +5,6 @@ from PyQt5 import QtSvg
 from JustChord.core import chord
 from JustChord.gui.widget import *
 
-DEFAULT_LINE_GAP = 30
-DEFAULT_WIDTH = 20 * DEFAULT_LINE_GAP
-DEFAULT_WIDTH_HEIGHT_RATIO = 1
-DEFAULT_HEIGHT = DEFAULT_WIDTH / DEFAULT_WIDTH_HEIGHT_RATIO
-DEFAULT_STROKE_WIDTH = 0.1
-
-STAFF_HORIZONTAL_CENTER_OFFSET = 2 * DEFAULT_LINE_GAP
-
 _accidental_widget_vertical_offsets = {
     None: 0,
     'sharp': -0.5,
@@ -42,20 +34,35 @@ accidental_scaling_factors = {
 #     'natural': 0
 # }
 
+@dataclass
+class StaffWindowConfig:
+    default_key_name: str = 'C'
+    key_signature_horizontal_gap: float = 0.75
+    key_signature_horizontal_start: float = 0.2
+    line_gap: float = 20
+    default_width: float = 20 * line_gap
+    default_width_height_ratio: float = 1
+    default_height: float = default_width / default_width_height_ratio
+    default_stroke_width: float = 0.1
+    staff_horizontal_center_offset: float = 2 * line_gap
+    note_width_scalar: float = 12 / 7
+    accidental_horizontal_offset_scalar: float = -1
+
 
 class NoteWidget(QtSvg.QSvgWidget):
     def __init__(self, parent):
         super().__init__()
         self.setParent(parent)
+        self.config: StaffWindowConfig = self.parent().config
         self.load(resource_path('./assets/whole_note.svg'))
         self.accidentalWidget = QtSvg.QSvgWidget()
         self.accidentalWidget.setParent(self.parent())
         self.accidentalType = None
-        self.accidentalOffsetX = -1 * self.parent().lineGap
+        self.accidentalOffsetX = self.config.accidental_horizontal_offset_scalar * self.config.line_gap
         x = self.parent().width() / 2
         y = self.parent().height() / 2
-        self.w = self.parent().lineGap * 12 / 7
-        self.h = self.parent().lineGap
+        self.w = self.parent().config.line_gap * self.parent().config.note_width_scalar
+        self.h = self.parent().config.line_gap
         self.show()
         self.setGeometry(
             x,
@@ -69,8 +76,8 @@ class NoteWidget(QtSvg.QSvgWidget):
         if t in {'sharp', 'flat', 'double_sharp', 'double_flat', 'natural'}:
             widget = self.accidentalWidget
             widget.load(resource_path('./assets/{}.svg'.format(t)))
-            widget.setFixedWidth(self.parent().lineGap * accidental_scaling_factors[t][0])
-            widget.setFixedHeight(self.parent().lineGap * 2 * accidental_scaling_factors[t][1])
+            widget.setFixedWidth(self.parent().config.line_gap * accidental_scaling_factors[t][0])
+            widget.setFixedHeight(self.parent().config.line_gap * 2 * accidental_scaling_factors[t][1])
             self.accidentalType = t
             # widget.setStyleSheet("border: 1px solid red;")
         elif t is None:
@@ -93,15 +100,15 @@ class NoteWidget(QtSvg.QSvgWidget):
         # Here, for the accidentals, the x and y are the top left corner of the noteWidget.
         self.accidentalWidget.setGeometry(
             self.pos().x() + self.accidentalOffsetX,
-            self.pos().y() - 1.0 * self.parent().lineGap,
-            self.parent().lineGap * accidental_scaling_factors[self.accidentalType][0],
-            2 * self.parent().lineGap * accidental_scaling_factors[self.accidentalType][1]
+            self.pos().y() - 1.0 * self.parent().config.line_gap,
+            self.parent().config.line_gap * accidental_scaling_factors[self.accidentalType][0],
+            2 * self.parent().config.line_gap * accidental_scaling_factors[self.accidentalType][1]
         )
 
     def move_accidental_widget_with_x_offset(self, offset=0):
         self.accidentalWidget.move(
             self.pos().x() + self.accidentalOffsetX + offset,
-            self.pos().y() + _accidental_widget_vertical_offsets[self.accidentalType] * self.parent().lineGap
+            self.pos().y() + _accidental_widget_vertical_offsets[self.accidentalType] * self.parent().config.line_gap
         )
 
     def show(self):
@@ -115,33 +122,27 @@ class NoteWidget(QtSvg.QSvgWidget):
 
 
 class StaffWindow(Widget):
-    DEFAULT_CONFIG = {
-        'keyName': 'C'
-    }
-
-    def __init__(self, parent, config=DEFAULT_CONFIG):
+    def __init__(self, parent, config=None):
         super().__init__()
+        self.config = config
+        if config is None:
+            self.config = StaffWindowConfig()
         self.setParent(parent)
-        for conf in StaffWindow.DEFAULT_CONFIG.items():
-            self.__setattr__(*conf)
-        if config != StaffWindow.DEFAULT_CONFIG:
-            for conf in config.items():
-                self.__setattr__(*conf)
-
+        self.keyName = self.config.default_key_name
         self.vacant_components = set()  # recycling useless components for less reloading
-
         self.initUI()
-        self.setGeometry(800, 400, 500, 500)
-        # self.show()
         if __name__ != '__main__':
             Widget.monitor.trigger.connect(self.updateNotes)
 
     def updateNotes(self):
         self.keyName = monitor.KeyDetector.currentKey
         self.setKeySignatures(self.keyName)
+
+        # Notes
         names = set()
         pitches = monitor.pressedNotes | monitor.sustainedNotes
         if monitor.currentChords and monitor.currentChords[0].isBlank == False:
+            # Update chord tones
             thisChord = monitor.currentChords[0]
             thisChord.updateName(key=self.keyName)
             for name in thisChord.noteNames:
@@ -153,14 +154,11 @@ class StaffWindow(Widget):
                         if chord.PITCH_INDEX[name] > 11:
                             octave -= 1
                         names.add(name + str(octave))
-            # print('staff notes list: {}'.format(names))
-
-
         else:
+            # Not a chord
             for pitch in pitches:
                 noteName = chord.getPitchName(pitch, with_octave=True, key=self.keyName)
                 names.add(noteName)
-        # print(names)
 
         # Remove old notes
         for noteName in list(self.noteWidgets.keys()):
@@ -185,8 +183,9 @@ class StaffWindow(Widget):
             return
         isSharpKey = keyName in chord.KEY_LIST[0]
         number = chord.KEY_LIST[0 if isSharpKey else 1].index(keyName) + 1
-        beginX = self.width() / 2 - DEFAULT_WIDTH * 0.2
-        gapX = 0.75
+        beginX = self.width() / 2 - self.config.default_width / 2
+        beginX += self.config.key_signature_horizontal_start * self.config.default_width
+        xGap = self.config.key_signature_horizontal_gap
         sharp_beginY1 = self.calcNoteHeight('G5')
         sharp_beginY2 = self.calcNoteHeight('G3')
         flat_beginY1 = self.calcNoteHeight('C5')
@@ -195,29 +194,27 @@ class StaffWindow(Widget):
             for name, beginYs in [('sharp', (sharp_beginY1, sharp_beginY2)), ('flat', (flat_beginY1, flat_beginY2))]:
                 beginY = beginYs[0] if clef == 'G' else beginYs[1]
                 x = beginX
-                y = beginY + _accidental_widget_vertical_offsets[name] * self.lineGap
+                y = beginY + _accidental_widget_vertical_offsets[name] * self.config.line_gap
                 for i in range(7):
                     self.keySignatures[clef][name][i].setGeometry(
                         x,
                         y,
-                        self.lineGap * accidental_scaling_factors[name][0],
-                        self.lineGap * 2 * accidental_scaling_factors[name][1]
+                        self.config.line_gap * accidental_scaling_factors[name][0],
+                        self.config.line_gap * 2 * accidental_scaling_factors[name][1]
                     )
                     visible = isSharpKey ^ (name != 'sharp') and i < number
-                    # visible = True
                     self.keySignatures[clef][name][i].setVisible(visible)
-                    x += self.keySignatures[clef][name][i].width() * gapX
+                    x += self.keySignatures[clef][name][i].width() * xGap
                     if name == 'sharp':
                         deltaY = 1.5 if i % 2 == (1 if i > 2 else 0) else -2
                     else:
                         deltaY = -1.5 if i % 2 == 0 else 2
-                    y += self.lineGap * deltaY
+                    y += self.config.line_gap * deltaY
 
     def initUI(self):
         # print(sys.path)
-        self.lineGap = 20
-        self.staffWidth = 20 * self.lineGap
-        self.strokeWidth = self.lineGap * 0.1
+        self.staffWidth = 20 * self.config.line_gap
+        self.strokeWidth = self.config.line_gap * 0.1
         self.pen = QPen(Qt.black, self.strokeWidth, Qt.SolidLine)
         self.staffCenterY = self.height() / 2
         self.noteWidgets = {}
@@ -234,19 +231,20 @@ class StaffWindow(Widget):
         self.drawStaff()
         self.drawNotes()
         self.drawAllKeySignatures()
+        self.show()
 
     def drawStaff(self):
         self.gClef.setGeometry(
-            (self.width() - self.staffWidth) / 2 - .25 * self.lineGap,
-            self.height() / 2 - 6.5 * self.lineGap,
-            self.lineGap * 4.5,
-            self.lineGap * 7.5
+            (self.width() - self.staffWidth) / 2 - .25 * self.config.line_gap,
+            self.height() / 2 - 6.5 * self.config.line_gap,
+            self.config.line_gap * 4.5,
+            self.config.line_gap * 7.5
         )
         self.fClef.setGeometry(
-            (self.width() - self.staffWidth) / 2 + .8 * self.lineGap,
-            self.height() / 2 + self.lineGap,
-            self.lineGap * 3,
-            self.lineGap * 3.2
+            (self.width() - self.staffWidth) / 2 + .8 * self.config.line_gap,
+            self.height() / 2 + self.config.line_gap,
+            self.config.line_gap * 3,
+            self.config.line_gap * 3.2
         )
 
     def drawAllKeySignatures(self):
@@ -275,9 +273,9 @@ class StaffWindow(Widget):
             octave = int(re.match(r'(.*?)(\d+)', name).groups()[1])
             # print(re.match(r'(.*?)(\d+)', name).groups()[1])
         except Exception as e:
-            raise Exception("Note name missing octave info! '{}'".format(name))
+            raise Exception("Note name without octave info! '{}'".format(name))
         octave = int(octave)
-        return self.staffCenterY - ((octave - 4) * 7 + degree) * self.lineGap / 2
+        return self.staffCenterY - ((octave - 4) * 7 + degree) * self.config.line_gap / 2
 
     def addNote(self, name):
         if name in self.notes:
@@ -328,7 +326,7 @@ class StaffWindow(Widget):
             prevNote = None
             if i > 0:
                 prevNote = self.noteWidgets[l[i - 1]]
-            currentNote.setCenterPosition(x=self.width() / 2 + STAFF_HORIZONTAL_CENTER_OFFSET, y=positionY)
+            currentNote.setCenterPosition(x=self.width() / 2 + self.config.staff_horizontal_center_offset, y=positionY)
             if hasAccidental:
                 if 'bb' in acdlString:
                     currentNote.setAccidentalType('double_flat')
@@ -347,10 +345,10 @@ class StaffWindow(Widget):
             if i > 0 and (prevNote.pos().y() - positionY) < 1:  # 'm2/M2' intervals
                 if prevNote.pos().x() <= currentNote.pos().x():  # this note not having been shifted to the right yet
                     currentNote.move(
-                        currentNote.pos().x() + 1.1 * self.lineGap,
+                        currentNote.pos().x() + 1.1 * self.config.line_gap,
                         currentNote.pos().y()
                     )
-                    currentNote.accidentalOffsetX = -2.2 * self.lineGap
+                    currentNote.accidentalOffsetX = -2.2 * self.config.line_gap
             currentNote.move_accidental_widget_with_x_offset(0)  # update position
 
             # Accidental overlapping detection
@@ -423,17 +421,17 @@ class StaffWindow(Widget):
     def paintEvent(self, e):
         painter = QPainter(self)
         painter.setPen(self.pen)
-        y0 = self.height() / 2 - 5 * self.lineGap;
+        y0 = self.height() / 2 - 5 * self.config.line_gap;
         x1 = (self.width() - self.staffWidth) / 2
         x2 = x1 + self.staffWidth
         for i in range(10):
-            y = y0 + i * self.lineGap
+            y = y0 + i * self.config.line_gap
             if i >= 5:
-                y += self.lineGap
+                y += self.config.line_gap
             painter.drawLine(x1, y, x2, y)
 
         topLineY = y0
-        bottomLineY = topLineY + 10 * self.lineGap
+        bottomLineY = topLineY + 10 * self.config.line_gap
 
         def ceil(x):
             return int(x + 0.5)
@@ -445,7 +443,7 @@ class StaffWindow(Widget):
         if len(notes_to_check) > 2:
             notes_to_check = [notes_to_check[0], notes_to_check[-1]]
         notes_to_check += [(name, note) for name, note in self.noteWidgets.items() if
-                           note.pos().x() > self.width() / 2 + STAFF_HORIZONTAL_CENTER_OFFSET]
+                           note.pos().x() > self.width() / 2 + self.config.staff_horizontal_center_offset]
 
         for name, note in notes_to_check:
             hasExtraLines = False
@@ -455,24 +453,25 @@ class StaffWindow(Widget):
 
             # Additional lines beneath
             if note.pos().y() > bottomLineY:
-                additionalLineY = bottomLineY + self.lineGap * ceil((note.pos().y() - bottomLineY) / self.lineGap)
+                additionalLineY = bottomLineY + self.config.line_gap * ceil(
+                    (note.pos().y() - bottomLineY) / self.config.line_gap)
                 hasExtraLines = True
 
             # Above
             if note.pos().y() + note.height() < topLineY:
-                additionalLineY = topLineY - self.lineGap * ceil(
-                    (topLineY - note.pos().y() - note.height()) / self.lineGap)
+                additionalLineY = topLineY - self.config.line_gap * ceil(
+                    (topLineY - note.pos().y() - note.height()) / self.config.line_gap)
                 hasExtraLines = True
 
             if hasExtraLines:
-                y = topLineY - self.lineGap if note.pos().y() + note.height() < topLineY else bottomLineY + self.lineGap
-                step = -self.lineGap if y < topLineY else self.lineGap
+                y = topLineY - self.config.line_gap if note.pos().y() + note.height() < topLineY else bottomLineY + self.config.line_gap
+                step = -self.config.line_gap if y < topLineY else self.config.line_gap
                 while not ((step < 0) ^ (y > additionalLineY)):
                     painter.drawLine(
-                        self.width() / 2 + STAFF_HORIZONTAL_CENTER_OFFSET - (0.5 + 0.1) * note.width(),
+                        self.width() / 2 + self.config.staff_horizontal_center_offset - (0.5 + 0.1) * note.width(),
                         # note.pos().x() - (0.1) * note.width(),
                         y,
-                        self.width() / 2 + STAFF_HORIZONTAL_CENTER_OFFSET + (0.5 + 0.1) * note.width(),
+                        self.width() / 2 + self.config.staff_horizontal_center_offset + (0.5 + 0.1) * note.width(),
                         # note.pos().x() + (1 + 0.1) * note.width(),
                         y
                     )
@@ -490,17 +489,15 @@ class StaffWindow(Widget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    staffWidget = StaffWindow()
+    staffWidget = StaffWindow(parent=None)
     staffWidget.addNote('C4')
     staffWidget.addNote('E4')
     staffWidget.addNote('Ab4')
     staffWidget.addNote('B4')
     staffWidget.removeNote('B4')
-
     staffWidget.drawNotes()
     # staffWidget.addNote(71)
     sys.exit(app.exec_())
-
 
 print('staffwindow: ')
 print(sys.path)

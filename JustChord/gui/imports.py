@@ -8,6 +8,7 @@ import time
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from pyqt5_material import apply_stylesheet
 
 from JustChord.gui import monitor
 

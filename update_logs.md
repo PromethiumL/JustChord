@@ -1,9 +1,12 @@
+## Just Chord! 1.1.4
+- Added configuration classes for `chordwindow` and `staffwindow`
+
 ## Just Chord! 1.1.3
-- Introduced `dataclass` for easier confguration modification. This requires
+- Introduced `dataclass` for easier configuration modification. This requires
 python 3.7 or higher versions.
 
 ## Just Chord! 1.1.2
-- Added default midi playback when using mouse on keyboardwidget
+- Added default midi playback when using mouse on `keyboardwidget`
 
 ## Just Chord! 1.1.1
 - Fixed path problem for `pyinstaller`

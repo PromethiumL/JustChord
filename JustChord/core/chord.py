@@ -1,157 +1,19 @@
-import re
-import copy
+from JustChord.core.utils import *
+from typing import *
 
-from JustChord.core.constants import *
-
-
-def debug(func):
-    def new_func(*args, **kwargs):
-        print(func.__name__, args, kwargs)
-        return func(*args, *kwargs)
-
-    return func
-
-
-def getPitchNumber(name):
-    """returns the midi pitch number of the given noteName"""
-    result = re.match(r'[A-G](b{1,2}|x|#|\*|n)?', name)
-    if not result:
-        raise 'Invalid note name: {}'.format(name)
-    result = result.group(0)
-    # print(result)
-    pitchName = result.replace('n', '')
-    octave = name[len(pitchName):]
-    # print('octave = ', octave)
-    if not octave:
-        octave = 4
-    try:
-        i = PITCH_INDEX[pitchName]  # pitch index
-        result = (int(octave) + 1) * 12 + i
-    except Exception as e:
-        raise e
-    return result
-
-
-def getPitchName(pitch, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE, with_octave=False, specified_letter=""):
-    """specified_letter will not work when roman_style == True"""
-
-    p = pitch % 12
-    accidentalNumber = getAccidentalNumber(key)
-    offset = 0
-
-    if specified_letter in {'C', 'D', 'E', 'F', 'G', 'A', 'B'} and not roman_style:
-        candidates = list(filter(lambda s: s[0] == specified_letter, list(PITCH_INDEX)))
-        if candidates == []:
-            result = getPitchName(pitch, with_octave=True)
-            print('Enharmonically subsituted: {}'.format(result))
-            return result
-            # raise Exception("Incorrect Note: letter {} does not match any note".format(specified_letter))
-        for s in candidates:
-            if PITCH_INDEX[s] % 12 == p:
-                letter = s
-                octave = ""
-                if with_octave:
-                    octave = getPitchOctaveNumber(pitch)
-                    if PITCH_INDEX[s] > 12:
-                        octave += 1
-                    if PITCH_INDEX[s] < 0:
-                        octave -= 1
-                    octave = str(octave)
-                return letter + octave
-
-    if roman_style:
-        offset += 2  # use roman numerals
-        p += 12 - accidentalNumber
-
-    octaveInfo = str(getPitchOctaveNumber(pitch)) if with_octave else ""
-
-    if key in KEY_LIST[0]:  # if it's a sharp key
-        return DEGREE_NAMES[offset][p] + octaveInfo
-    else:
-        return DEGREE_NAMES[1 + offset][p] + octaveInfo
-
-
-def addIntervalToNoteName(name, interval):
-    if interval not in INTERVAL_SIZE:
-        raise Exception("Incorrect interval: {}".format(interval))
-
-    pitch = getPitchNumber(name)
-    letter = name[0]
-    octave = ''.join(list(filter(lambda x: ord('0') <= ord(x) <= ord('9'), list(name))))
-    # print("name: {}".format(octave))
-    newPitch = pitch + INTERVAL_SIZE[interval]
-    letterShift = int(interval[1:]) - 1
-    newLetter = "ABCDEFG"[("ABCDEFG".index(letter) + letterShift) % 7]
-    return getPitchName(newPitch, with_octave=(octave != ''), specified_letter=newLetter)
-
-
-def getPitchOctaveNumber(pitch):
-    return pitch // 12 - 1
-
-
-def getKeyName(i, sharp=False):
-    if i == 0:
-        return 'C'
-    else:
-        return KEY_LIST[0 if sharp else 1][i - 1]
-
-
-def getAccidentalNumber(keyName):
-    if keyName in KEY_LIST[0]:
-        return KEY_LIST[0].index(keyName) + 1
-    elif keyName in KEY_LIST[1]:
-        return KEY_LIST[1].index(keyName) + 1
-    else:
-        return 0
-
-
-def getInterval(pitch1, pitch2):
-    """calc Interval smaller than an octave from given pitches"""
-    if pitch1 <= pitch2:
-        pitch2 -= (pitch2 - pitch1) // 12 * 12
-    else:
-        pitch2 += ((pitch1 - pitch2) // 12 + 1) * 12
-    return pitch2 - pitch1
-
-
-def identifyChord(noteList, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
-    """Ensure that the 'noteList' is non-empty"""
-    if not noteList:
-        raise Exception("'identifyChord' received an empty noteList")
-    results = []
-    notes = sorted(noteList)
-    # get the actual bass (lowest) note
-    lowestNote = notes[0] % 12
-
-    # get the pitch set
-    notes = sorted(list(set(map(lambda x: x % 12, notes))))
-    for root in notes:
-        intervals = set(map(lambda x: getInterval(root, x), notes))
-        chord = Chord(root, intervals, lowestNote)
-        if chord.recognized:
-            # print(chord.name)
-            if root == lowestNote:
-                chord.complexity -= 3
-            results.append(chord)
-    results.sort(key=lambda c: c.complexity)
-    return results
-
-
-def identifyChordName(noteArray, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
-    return map(lambda x: x.name, identifyChord(noteArray, key=key, roman_style=roman_style))
-
-
-# def getChordIntervalName(rootNote, )
 
 class Chord:
-    def __init__(self, rootName, intervals=None, bassName=None, chordType=None, blankChord=False):
+    def __init__(self, rootName: str,
+                 intervals: Set[int] = None,
+                 bassName=None, chordType=None,
+                 blankChord=False):
         if bassName is None:
             bassName = rootName
         self.setRoot(rootName)
         self.setBass(bassName)
         self.name = ''
         self.chordTypes = []
-        self.intervals = intervals
+        self.intervals: Set[int] = intervals
         self.intervalNames = set()
         self.notes = set()
         self.noteNames = set()
@@ -182,7 +44,7 @@ class Chord:
             self.bassName = bassName
             self.bassPitch = PITCH_INDEX[self.bassName]
 
-    def buildChord(self):
+    def buildChord(self) -> None:
         self.chordType = ''
         self.complexity = 0
         self.recognized = False
@@ -231,7 +93,7 @@ class Chord:
             self.rootName, self.typeName + (' / ' + self.bassName if self.rootName != self.bassName else '')
         )
 
-    def parseChordType(self, chordType):
+    def parseChordType(self, chordType) -> bool:
         chordType.replace(' ', '')
         for intervals, name, complexity in CHORD_DATA:
             if name == chordType:
@@ -244,10 +106,10 @@ class Chord:
         return False
 
     def isInterval(self):
-        return len(self.intervals) == 2 and self.intervals != set([U1, P5])
+        return len(self.intervals) == 2 and self.intervals != set([INTERVAL_SIZE['U1'], INTERVAL_SIZE['P5']])
 
     def isMinorChord(self):
-        return M3 not in self.intervals and m3 in self.intervals
+        return INTERVAL_SIZE['M3'] not in self.intervals and INTERVAL_SIZE['m3'] in self.intervals
 
     def getBaseName(self, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
         return getPitchName(self.rootPitch) + ' ' + self.chordType
@@ -267,7 +129,35 @@ class Chord:
         if not self.recognized:
             return '<unrecognized>'
         else:
-            return self.rootName + ' ' + self.typeName
+            return f'[{self.rootName} {self.typeName}]'
+
+
+def identifyChord(noteList, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
+    """Make sure that the 'noteList' is non-empty"""
+    if not noteList:
+        raise Exception("'identifyChord' received an empty noteList")
+    results = []
+    notes = sorted(noteList)
+    # get the actual bass (lowest) note
+    lowestNote = notes[0] % 12
+
+    # get the pitch set
+    notes = sorted(list(set(map(lambda x: x % 12, notes))))
+    for root in notes:
+        intervals = set(map(lambda x: getInterval(root, x), notes))
+        chord = Chord(root, intervals, lowestNote)
+        if chord.recognized:
+            # print(chord.name)
+            if root == lowestNote:
+                chord.complexity -= 3
+            results.append(chord)
+    results.sort(key=lambda c: c.complexity)
+    return results
+
+
+def identifyChordName(noteArray, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
+    return map(lambda x: x.name, identifyChord(noteArray, key=key, roman_style=roman_style))
+
 
 def main():
     notes = [59, 52, 67, 73]
@@ -276,6 +166,7 @@ def main():
     print(c.name)
     print(c.noteNames)
     print(c)
+
 
 if __name__ == '__main__':
     print(addIntervalToNoteName('Bx4', 'P5'))

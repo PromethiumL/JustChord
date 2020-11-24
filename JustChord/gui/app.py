@@ -17,9 +17,9 @@ class JustChordMainWindow(QWidget):
         self.opacity = 200  # Ranges from 0 to 255
         self.container.setStyleSheet('.QWidget {{background-color: rgb(255, 255, 255, {});}}'.format(self.opacity))
         self.container.show()
-        self.chordWindow = ChordWindow(self.container, config={'keyName': 'C'})
+        self.chordWindow = ChordWindow(self.container)
         # self.setStyleSheet('border: 1px solid red')
-        self.staffWindow = StaffWindow(self.container, config={'keyName': 'C'})
+        self.staffWindow = StaffWindow(self.container)
         container_layout = QHBoxLayout(self.container)
         container_layout.addWidget(self.staffWindow)
         container_layout.addWidget(self.chordWindow)
@@ -125,6 +125,7 @@ class JustChordApp(QApplication):
         try:
             super(JustChordApp, self).__init__(sys.argv)
             self.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+            # apply_stylesheet(self, theme='light_cyan.xml')
 
             # Init MIDI
             self.midi_in_wizard(force=False)
@@ -141,7 +142,6 @@ class JustChordApp(QApplication):
                 print("default app font not found!")
                 self.setStyleSheet('.QLabel {{ font: "Arial"; }}')
 
-
             # Create Window
             jcMainWindow = JustChordMainWindow()
 
@@ -150,6 +150,7 @@ class JustChordApp(QApplication):
             jcKeyboardWidget.move(jcMainWindow.pos().x() + (jcMainWindow.width() - jcKeyboardWidget.width()) // 2,
                                   jcMainWindow.pos().y() + jcMainWindow.height())
             widget.Widget.monitor.trigger.connect(jcKeyboardWidget.updateNotes)
+
             sys.exit(self.exec_())
 
         except Exception as e:

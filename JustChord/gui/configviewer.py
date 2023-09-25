@@ -1,5 +1,12 @@
-from JustChord.gui.imports import *
-from JustChord.gui.staffwindow import StaffWindowConfig
+import sys
+
+from PyQt6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QTableWidget,
+    QVBoxLayout,
+)
 
 
 class MySettingsTable(QTableWidget):
@@ -20,15 +27,15 @@ class ConfigViewer(QDialog):
         myTable1 = MySettingsTable()
         myTable1.setParent(self)
         btns = QDialogButtonBox(self)
-        btns.addButton('Apply', QDialogButtonBox.ApplyRole)
-        btns.addButton('Cancel', QDialogButtonBox.NoRole)
+        btns.addButton("Apply", QDialogButtonBox.ApplyRole)
+        btns.addButton("Cancel", QDialogButtonBox.NoRole)
 
         vbox.addWidget(myTable1)
         vbox.addWidget(btns)
         self.setLayout(vbox)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     configViewer = ConfigViewer()
     sys.exit(app.exec_())

@@ -1,16 +1,24 @@
 import re
-from JustChord.core.constants import *
+
+from JustChord.core.constants import (
+    DEFAULT_KEY,
+    DEGREE_NAMES,
+    INTERVAL_SIZE,
+    KEY_LIST,
+    PITCH_INDEX,
+    USE_ROMAN_STYLE,
+)
 
 
 def getPitchNumber(name):
     """returns the midi pitch number of the given noteName"""
-    result = re.match(r'[A-G](b{1,2}|x|#|\*|n)?', name)
+    result = re.match(r"[A-G](b{1,2}|x|#|\*|n)?", name)
     if not result:
-        raise Exception('Invalid note name: {}'.format(name))
+        raise Exception("Invalid note name: {}".format(name))
     result = result.group(0)
     # print(result)
-    pitchName = result.replace('n', '')
-    octave = name[len(pitchName):]
+    pitchName = result.replace("n", "")
+    octave = name[len(pitchName) :]
     # print('octave = ', octave)
     if not octave:
         octave = 4
@@ -22,18 +30,24 @@ def getPitchNumber(name):
     return result
 
 
-def getPitchName(pitch, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE, with_octave=False, specified_letter=""):
+def getPitchName(
+    pitch,
+    key=DEFAULT_KEY,
+    roman_style=USE_ROMAN_STYLE,
+    with_octave=False,
+    specified_letter="",
+):
     """specified_letter will not work when roman_style == True"""
 
     p = pitch % 12
     accidentalNumber = getAccidentalNumber(key)
     offset = 0
 
-    if specified_letter in {'C', 'D', 'E', 'F', 'G', 'A', 'B'} and not roman_style:
+    if specified_letter in {"C", "D", "E", "F", "G", "A", "B"} and not roman_style:
         candidates = list(filter(lambda s: s[0] == specified_letter, list(PITCH_INDEX)))
         if candidates == []:
             result = getPitchName(pitch, with_octave=True)
-            print('Enharmonically subsituted: {}'.format(result))
+            print("Enharmonically subsituted: {}".format(result))
             return result
             # raise Exception("Incorrect Note: letter {} does not match any note".format(specified_letter))
         for s in candidates:
@@ -67,12 +81,12 @@ def addIntervalToNoteName(name, interval):
 
     pitch = getPitchNumber(name)
     letter = name[0]
-    octave = ''.join(list(filter(lambda x: ord('0') <= ord(x) <= ord('9'), list(name))))
+    octave = "".join(list(filter(lambda x: ord("0") <= ord(x) <= ord("9"), list(name))))
     # print("name: {}".format(octave))
     newPitch = pitch + INTERVAL_SIZE[interval]
     letterShift = int(interval[1:]) - 1
     newLetter = "ABCDEFG"[("ABCDEFG".index(letter) + letterShift) % 7]
-    return getPitchName(newPitch, with_octave=(octave != ''), specified_letter=newLetter)
+    return getPitchName(newPitch, with_octave=(octave != ""), specified_letter=newLetter)
 
 
 def getPitchOctaveNumber(pitch):
@@ -81,7 +95,7 @@ def getPitchOctaveNumber(pitch):
 
 def getKeyName(i, sharp=False):
     if i == 0:
-        return 'C'
+        return "C"
     else:
         return KEY_LIST[0 if sharp else 1][i - 1]
 

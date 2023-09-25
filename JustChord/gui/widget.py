@@ -1,5 +1,6 @@
 # coding:utf-8
-from JustChord.gui.imports import *
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QFrame
 
 
 class Widget(QFrame):
@@ -32,11 +33,11 @@ class Widget(QFrame):
     def initMonitor(self):
         if not Widget.monitoring:
             Widget.monitoring = True
-            print('Widget connected to monitor.')
+            print("Widget connected to monitor.")
             Widget.monitor = monitor.Monitor()
             Widget.monitor.start()
             if not monitor.MIDI_INITIALIZED:
-                print('WARNING: No MIDI device is selected')
+                print("WARNING: No MIDI device is selected")
 
     def center(self):
         self.screenX = QApplication.desktop().width()

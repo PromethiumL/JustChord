@@ -1,16 +1,5 @@
-import sys
 import os
-from functools import *
-from typing import *
-from dataclasses import *
-import time
-
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from pyqt5_material import apply_stylesheet
-
-from JustChord.gui import monitor
+import sys
 
 
 def cache(func):
@@ -22,7 +11,9 @@ def cache(func):
         result = func(*args)
         _cache[args] = result
         return result
+
     return cached_func
+
 
 def debug(func):
     def foo(*args, **kwargs):
@@ -33,9 +24,9 @@ def debug(func):
 
 
 def resource_path(path):  # convert path for pyinstaller
-    path = path.replace('/', os.sep)
-    if hasattr(sys, '_MEIPASS'):
+    path = path.replace("/", os.sep)
+    if hasattr(sys, "_MEIPASS"):
         # print('has,', os.path.join(sys._MEIPASS, path))
         return os.path.join(sys._MEIPASS, path)
     # print('no,', os.path.join(os.path.abspath('.'), path))
-    return os.path.join(os.path.abspath('.'), path)
+    return os.path.join(os.path.abspath("."), path)

@@ -1,5 +1,4 @@
-from JustChord.core.constants import *
-from pprint import pprint
+from JustChord.core.constants import CHORD_DATA, DEGREE_NAMES, PITCH_INDEX
 
 
 def logger(func):
@@ -38,13 +37,13 @@ def tone_set_contains(tone_set, subset):
 
 def get_all_chords_contain_subset(subset, contain_notes=set()):
     if len(subset) < 2:
-        raise Exception('subset {} has too few elements'.format(subset))
+        raise Exception("subset {} has too few elements".format(subset))
 
     res = []
-    for chord_tone_set, chord_type, sonarity in CHORD_DATA:
+    for chord_tone_set, chord_type, _sonarity in CHORD_DATA:
         # Bypass non-chords
         chord_tone_set = interval_names_to_tone_set(chord_tone_set)
-        if len(chord_tone_set) < 3 or 'Scale' in chord_type:
+        if len(chord_tone_set) < 3 or "Scale" in chord_type:
             continue
 
         for root_pitch in range(12):
@@ -67,7 +66,7 @@ def get_all_chords_contain_notes(note_names):
 
     notes = [PITCH_INDEX[name] for name in note_names]
     res = []
-    for chord_tone_set, chord_type, sonarity in CHORD_DATA:
+    for chord_tone_set, chord_type, _sonarity in CHORD_DATA:
         # Skip intervals or scales
         if len(chord_tone_set) < 3 or len(chord_tone_set) > 5:
             continue
@@ -93,13 +92,13 @@ def get_permutations(tone_set):
 
 
 def main1():
-    prev_type = ''
-    for chord in get_all_chords_contain_notes(['C', 'Bb']):
+    prev_type = ""
+    for chord in get_all_chords_contain_notes(["C", "Bb"]):
         if chord[1] != prev_type:
             print()
             prev_type = chord[1]
-        print('{} {}'.format(*chord))
+        print("{} {}".format(*chord))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main1()

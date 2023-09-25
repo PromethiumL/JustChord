@@ -1,27 +1,33 @@
 import re
+import sys
+from dataclasses import dataclass
 
-from PyQt5 import QtSvg
+from PyQt6 import QtSvg
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter, QPen
+from PyQt6.QtWidgets import QApplication
 
 from JustChord.core import chord
-from JustChord.gui.widget import *
+from JustChord.gui.imports import resource_path
+from JustChord.gui.widget import Widget
 
 _accidental_widget_vertical_offsets = {
     None: 0,
-    'sharp': -0.5,
-    'flat': -1,
-    'double_sharp': 0,
-    'double_flat': -1,
-    'natural': -0.5
+    "sharp": -0.5,
+    "flat": -1,
+    "double_sharp": 0,
+    "double_flat": -1,
+    "natural": -0.5,
 }
 
 accidental_scaling_factors = {
-    ## type: (width_factor, height_factor)
+    # order: (width_factor, height_factor)
     None: (1, 1),
-    'sharp': (0.85, 1),
-    'flat': (0.85, 1),
-    'double_sharp': (1, 0.5),
-    'double_flat': (1.2, 1),
-    'natural': (0.7, 1)
+    "sharp": (0.85, 1),
+    "flat": (0.85, 1),
+    "double_sharp": (1, 0.5),
+    "double_flat": (1.2, 1),
+    "natural": (0.7, 1),
 }
 
 
@@ -34,9 +40,10 @@ accidental_scaling_factors = {
 #     'natural': 0
 # }
 
+
 @dataclass
 class StaffWindowConfig:
-    default_key_name: str = 'C'
+    default_key_name: str = "C"
     key_signature_horizontal_gap: float = 0.75
     key_signature_horizontal_start: float = 0.2
     line_gap: float = 20
@@ -54,7 +61,7 @@ class NoteWidget(QtSvg.QSvgWidget):
         super().__init__()
         self.setParent(parent)
         self.config: StaffWindowConfig = self.parent().config
-        self.load(resource_path('./assets/whole_note.svg'))
+        self.load(resource_path("./assets/whole_note.svg"))
         self.accidentalWidget = QtSvg.QSvgWidget()
         self.accidentalWidget.setParent(self.parent())
         self.accidentalType = None
@@ -64,18 +71,13 @@ class NoteWidget(QtSvg.QSvgWidget):
         self.w = self.parent().config.line_gap * self.parent().config.note_width_scalar
         self.h = self.parent().config.line_gap
         self.show()
-        self.setGeometry(
-            x,
-            y,
-            self.w,
-            self.h
-        )
+        self.setGeometry(x, y, self.w, self.h)
         # self.setStyleSheet("border: 1px solid red;")
 
     def setAccidentalType(self, t=None):
-        if t in {'sharp', 'flat', 'double_sharp', 'double_flat', 'natural'}:
+        if t in {"sharp", "flat", "double_sharp", "double_flat", "natural"}:
             widget = self.accidentalWidget
-            widget.load(resource_path('./assets/{}.svg'.format(t)))
+            widget.load(resource_path("./assets/{}.svg".format(t)))
             widget.setFixedWidth(self.parent().config.line_gap * accidental_scaling_factors[t][0])
             widget.setFixedHeight(self.parent().config.line_gap * 2 * accidental_scaling_factors[t][1])
             self.accidentalType = t
@@ -102,13 +104,13 @@ class NoteWidget(QtSvg.QSvgWidget):
             self.pos().x() + self.accidentalOffsetX,
             self.pos().y() - 1.0 * self.parent().config.line_gap,
             self.parent().config.line_gap * accidental_scaling_factors[self.accidentalType][0],
-            2 * self.parent().config.line_gap * accidental_scaling_factors[self.accidentalType][1]
+            2 * self.parent().config.line_gap * accidental_scaling_factors[self.accidentalType][1],
         )
 
     def move_accidental_widget_with_x_offset(self, offset=0):
         self.accidentalWidget.move(
             self.pos().x() + self.accidentalOffsetX + offset,
-            self.pos().y() + _accidental_widget_vertical_offsets[self.accidentalType] * self.parent().config.line_gap
+            self.pos().y() + _accidental_widget_vertical_offsets[self.accidentalType] * self.parent().config.line_gap,
         )
 
     def show(self):
@@ -131,7 +133,7 @@ class StaffWindow(Widget):
         self.keyName = self.config.default_key_name
         self.vacant_components = set()  # recycling useless components for less reloading
         self.initUI()
-        if __name__ != '__main__':
+        if __name__ != "__main__":
             Widget.monitor.trigger.connect(self.updateNotes)
 
     def updateNotes(self):
@@ -141,7 +143,7 @@ class StaffWindow(Widget):
         # Notes
         names = set()
         pitches = monitor.pressedNotes | monitor.sustainedNotes
-        if monitor.currentChords and monitor.currentChords[0].isBlank == False:
+        if monitor.currentChords and not monitor.currentChords[0].isBlank:
             # Update chord tones
             thisChord = monitor.currentChords[0]
             thisChord.updateName(key=self.keyName)
@@ -172,12 +174,12 @@ class StaffWindow(Widget):
 
         self.drawNotes()
 
-    def setKeySignatures(self, keyName='C'):
+    def setKeySignatures(self, keyName="C"):
         if keyName not in chord.NATURAL_SCALES:
-            raise Exception('invalid keyName{}'.format(keyName))
-        if keyName == 'C':
-            for clef in ['G', 'F']:
-                for name in ['sharp', 'flat']:
+            raise Exception("invalid keyName{}".format(keyName))
+        if keyName == "C":
+            for clef in ["G", "F"]:
+                for name in ["sharp", "flat"]:
                     for svg in self.keySignatures[clef][name]:
                         svg.setVisible(False)
             return
@@ -186,13 +188,16 @@ class StaffWindow(Widget):
         beginX = self.width() / 2 - self.config.default_width / 2
         beginX += self.config.key_signature_horizontal_start * self.config.default_width
         xGap = self.config.key_signature_horizontal_gap
-        sharp_beginY1 = self.calcNoteHeight('G5')
-        sharp_beginY2 = self.calcNoteHeight('G3')
-        flat_beginY1 = self.calcNoteHeight('C5')
-        flat_beginY2 = self.calcNoteHeight('C3')  # offset 1 upwards
-        for clef in ['G', 'F']:
-            for name, beginYs in [('sharp', (sharp_beginY1, sharp_beginY2)), ('flat', (flat_beginY1, flat_beginY2))]:
-                beginY = beginYs[0] if clef == 'G' else beginYs[1]
+        sharp_beginY1 = self.calcNoteHeight("G5")
+        sharp_beginY2 = self.calcNoteHeight("G3")
+        flat_beginY1 = self.calcNoteHeight("C5")
+        flat_beginY2 = self.calcNoteHeight("C3")  # offset 1 upwards
+        for clef in ["G", "F"]:
+            for name, beginYs in [
+                ("sharp", (sharp_beginY1, sharp_beginY2)),
+                ("flat", (flat_beginY1, flat_beginY2)),
+            ]:
+                beginY = beginYs[0] if clef == "G" else beginYs[1]
                 x = beginX
                 y = beginY + _accidental_widget_vertical_offsets[name] * self.config.line_gap
                 for i in range(7):
@@ -200,12 +205,12 @@ class StaffWindow(Widget):
                         x,
                         y,
                         self.config.line_gap * accidental_scaling_factors[name][0],
-                        self.config.line_gap * 2 * accidental_scaling_factors[name][1]
+                        self.config.line_gap * 2 * accidental_scaling_factors[name][1],
                     )
-                    visible = isSharpKey ^ (name != 'sharp') and i < number
+                    visible = isSharpKey ^ (name != "sharp") and i < number
                     self.keySignatures[clef][name][i].setVisible(visible)
                     x += self.keySignatures[clef][name][i].width() * xGap
-                    if name == 'sharp':
+                    if name == "sharp":
                         deltaY = 1.5 if i % 2 == (1 if i > 2 else 0) else -2
                     else:
                         deltaY = -1.5 if i % 2 == 0 else 2
@@ -222,11 +227,11 @@ class StaffWindow(Widget):
         self.keySignatures = []
 
         self.gClef = QtSvg.QSvgWidget(self)
-        self.gClef.load(resource_path('./assets/G_clef.svg'))
+        self.gClef.load(resource_path("./assets/G_clef.svg"))
         # self.gClef.setStyleSheet("border: 1px solid red;")
 
         self.fClef = QtSvg.QSvgWidget(self)
-        self.fClef.load(resource_path('./assets/F_clef.svg'))
+        self.fClef.load(resource_path("./assets/F_clef.svg"))
         # self.fClef.setStyleSheet("border: 1px solid red;")
         self.drawStaff()
         self.drawNotes()
@@ -235,34 +240,28 @@ class StaffWindow(Widget):
 
     def drawStaff(self):
         self.gClef.setGeometry(
-            (self.width() - self.staffWidth) / 2 - .25 * self.config.line_gap,
+            (self.width() - self.staffWidth) / 2 - 0.25 * self.config.line_gap,
             self.height() / 2 - 6.5 * self.config.line_gap,
             self.config.line_gap * 4.5,
-            self.config.line_gap * 7.5
+            self.config.line_gap * 7.5,
         )
         self.fClef.setGeometry(
-            (self.width() - self.staffWidth) / 2 + .8 * self.config.line_gap,
+            (self.width() - self.staffWidth) / 2 + 0.8 * self.config.line_gap,
             self.height() / 2 + self.config.line_gap,
             self.config.line_gap * 3,
-            self.config.line_gap * 3.2
+            self.config.line_gap * 3.2,
         )
 
     def drawAllKeySignatures(self):
         self.keySignatures = {
-            'G': {  # G clef
-                'sharp': [],
-                'flat': []
-            },
-            'F': {  # F clef
-                'sharp': [],
-                'flat': []
-            }
+            "G": {"sharp": [], "flat": []},  # G clef
+            "F": {"sharp": [], "flat": []},  # F clef
         }  # There should be 6 * 2 * 2 == 24 accidentals.
-        for clef in ['G', 'F']:
-            for name in ['sharp', 'flat']:
-                for i in range(7):
+        for clef in ["G", "F"]:
+            for name in ["sharp", "flat"]:
+                for _ in range(7):
                     svg = QtSvg.QSvgWidget(self)
-                    svg.load(resource_path('./assets/{}.svg'.format(name)))
+                    svg.load(resource_path("./assets/{}.svg".format(name)))
                     svg.setVisible(False)
                     self.keySignatures[clef][name].append(svg)
         self.setKeySignatures(self.keyName)
@@ -270,9 +269,9 @@ class StaffWindow(Widget):
     def calcNoteHeight(self, name):
         degree = "CDEFGAB".index(name[0])
         try:
-            octave = int(re.match(r'(.*?)(\d+)', name).groups()[1])
+            octave = int(re.match(r"(.*?)(\d+)", name).groups()[1])
             # print(re.match(r'(.*?)(\d+)', name).groups()[1])
-        except Exception as e:
+        except Exception:
             raise Exception("Note name without octave info! '{}'".format(name))
         octave = int(octave)
         return self.staffCenterY - ((octave - 4) * 7 + degree) * self.config.line_gap / 2
@@ -287,12 +286,7 @@ class StaffWindow(Widget):
             self.vacant_components.discard(n)  # so it's not vacant any more
         else:
             n = NoteWidget(self)  # create new one if no vacant note widget exists
-        n.setCenterPosition(
-            x=self.width() / 2,
-            y=self.height() / 2,
-            w=n.width(),
-            h=n.height()
-        )
+        n.setCenterPosition(x=self.width() / 2, y=self.height() / 2, w=n.width(), h=n.height())
         self.noteWidgets[name] = n
 
     def removeNote(self, name):
@@ -312,32 +306,35 @@ class StaffWindow(Widget):
         self.notes.discard(name)
 
     def drawNotes(self):
-        l = list(self.notes)
-        l.sort(key=lambda name: chord.getPitchNumber(name))
-        for i in range(len(l)):
-            name = l[i]
+        lst = list(self.notes)
+        lst.sort(key=lambda name: chord.getPitchNumber(name))
+        for i in range(len(lst)):
+            name = lst[i]
             if name not in self.noteWidgets:
                 self.addNote(name)
             positionY = self.calcNoteHeight(name)
             acdlString = self.getAccidentalInfoInKey(name, self.keyName)
-            hasAccidental = '#' in acdlString or 'b' in acdlString or 'x' in acdlString or 'n' in acdlString
+            hasAccidental = "#" in acdlString or "b" in acdlString or "x" in acdlString or "n" in acdlString
             acdt_offsetX = 0
             currentNote = self.noteWidgets[name]
             prevNote = None
             if i > 0:
-                prevNote = self.noteWidgets[l[i - 1]]
-            currentNote.setCenterPosition(x=self.width() / 2 + self.config.staff_horizontal_center_offset, y=positionY)
+                prevNote = self.noteWidgets[lst[i - 1]]
+            currentNote.setCenterPosition(
+                x=self.width() / 2 + self.config.staff_horizontal_center_offset,
+                y=positionY,
+            )
             if hasAccidental:
-                if 'bb' in acdlString:
-                    currentNote.setAccidentalType('double_flat')
-                elif 'b' in acdlString:
-                    currentNote.setAccidentalType('flat')
-                elif '#' in acdlString:
-                    currentNote.setAccidentalType('sharp')
-                elif 'x' in acdlString:
-                    currentNote.setAccidentalType('double_sharp')
-                elif 'n' in acdlString:
-                    currentNote.setAccidentalType('natural')
+                if "bb" in acdlString:
+                    currentNote.setAccidentalType("double_flat")
+                elif "b" in acdlString:
+                    currentNote.setAccidentalType("flat")
+                elif "#" in acdlString:
+                    currentNote.setAccidentalType("sharp")
+                elif "x" in acdlString:
+                    currentNote.setAccidentalType("double_sharp")
+                elif "n" in acdlString:
+                    currentNote.setAccidentalType("natural")
                 currentNote.move_accidental_widget_with_x_offset()
             else:
                 currentNote.setAccidentalType(None)
@@ -346,7 +343,7 @@ class StaffWindow(Widget):
                 if prevNote.pos().x() <= currentNote.pos().x():  # this note not having been shifted to the right yet
                     currentNote.move(
                         currentNote.pos().x() + 1.1 * self.config.line_gap,
-                        currentNote.pos().y()
+                        currentNote.pos().y(),
                     )
                     currentNote.accidentalOffsetX = -2.2 * self.config.line_gap
             currentNote.move_accidental_widget_with_x_offset(0)  # update position
@@ -355,30 +352,34 @@ class StaffWindow(Widget):
             if hasAccidental:
                 overlapped = False
                 for j in range(i):
-                    widget = self.noteWidgets[l[j]]
-                    acdl_widget = widget.accidentalWidget
+                    widget = self.noteWidgets[lst[j]]
+                    widget.accidentalWidget
                     if widget.accidentalType is not None:
                         widget = widget.accidentalWidget
-                    if currentNote.accidentalWidget.pos().y() + currentNote.accidentalWidget.height() > widget.pos().y():
+                    if (
+                        currentNote.accidentalWidget.pos().y() + currentNote.accidentalWidget.height()
+                        > widget.pos().y()
+                    ):
                         if currentNote.accidentalWidget.pos().x() < widget.pos().x() + widget.width():
                             overlapped = True
                             break
 
                 if overlapped:
                     N = 1  # Number of notes below to check to avoid accidental signature overlapping
-                    inf = 99999
                     numOfNotesChecked = 0
                     j = i - 1
                     while numOfNotesChecked < N and j >= 0:
-                        note_below = self.noteWidgets[l[j]]
+                        note_below = self.noteWidgets[lst[j]]
                         x = note_below.pos().x()
                         y = note_below.pos().y()
                         if note_below.accidentalType is not None:
                             numOfNotesChecked += 1
                             x = note_below.accidentalWidget.pos().x()
                             y = note_below.accidentalWidget.pos().y()
-                        if currentNote.accidentalWidget.pos().x() + currentNote.accidentalWidget.width() >= x and \
-                                currentNote.accidentalWidget.pos().y() + currentNote.accidentalWidget.height() >= y:
+                        if (
+                            currentNote.accidentalWidget.pos().x() + currentNote.accidentalWidget.width() >= x
+                            and currentNote.accidentalWidget.pos().y() + currentNote.accidentalWidget.height() >= y
+                        ):
                             acdt_offsetX += x - currentNote.accidentalWidget.pos().x()
                             acdt_offsetX -= currentNote.accidentalWidget.width()
                         currentNote.move_accidental_widget_with_x_offset(acdt_offsetX)
@@ -392,23 +393,23 @@ class StaffWindow(Widget):
     def getAccidentalInfoInKey(self, noteName, keyName):
         """This deals with the accidentals."""
         if keyName not in chord.NATURAL_SCALES:
-            raise Exception('invalid keyName: {}'.format(keyName))
+            raise Exception("invalid keyName: {}".format(keyName))
 
         letter = noteName[0]
-        index = 'CDEFGAB'.index(noteName[0])
+        index = "CDEFGAB".index(letter)
 
         def removeDigits(s):
-            return ''.join(list(filter(lambda ch: not (ord('0') <= ord(ch) <= ord('9')), s)))
+            return "".join(list(filter(lambda ch: not (ord("0") <= ord(ch) <= ord("9")), s)))
 
         currentAccidental = removeDigits(noteName[1:])
         actualAccidental = chord.NATURAL_SCALES[keyName][index][1:]
 
-        if currentAccidental == '' and actualAccidental != '':
-            return 'n'  # 'n' for 'natural'
-        if currentAccidental != '' and currentAccidental == actualAccidental:
-            return ''
-        if currentAccidental == 'n' and actualAccidental == '':
-            return ''
+        if currentAccidental == "" and actualAccidental != "":
+            return "n"  # 'n' for 'natural'
+        if currentAccidental != "" and currentAccidental == actualAccidental:
+            return ""
+        if currentAccidental == "n" and actualAccidental == "":
+            return ""
         # print(noteName, currentAccidental)
         return currentAccidental
 
@@ -421,7 +422,7 @@ class StaffWindow(Widget):
     def paintEvent(self, e):
         painter = QPainter(self)
         painter.setPen(self.pen)
-        y0 = self.height() / 2 - 5 * self.config.line_gap;
+        y0 = self.height() / 2 - 5 * self.config.line_gap
         x1 = (self.width() - self.staffWidth) / 2
         x2 = x1 + self.staffWidth
         for i in range(10):
@@ -442,10 +443,13 @@ class StaffWindow(Widget):
         notes_to_check = sorted(self.noteWidgets.items(), key=lambda pair: chord.getPitchNumber(pair[0]))
         if len(notes_to_check) > 2:
             notes_to_check = [notes_to_check[0], notes_to_check[-1]]
-        notes_to_check += [(name, note) for name, note in self.noteWidgets.items() if
-                           note.pos().x() > self.width() / 2 + self.config.staff_horizontal_center_offset]
+        notes_to_check += [
+            (name, note)
+            for name, note in self.noteWidgets.items()
+            if note.pos().x() > self.width() / 2 + self.config.staff_horizontal_center_offset
+        ]
 
-        for name, note in notes_to_check:
+        for _name, note in notes_to_check:
             hasExtraLines = False
             if int(note.pos().y() + 0.5 * note.height()) == int(self.height() / 2):
                 additionalLineY = self.height() / 2
@@ -454,17 +458,23 @@ class StaffWindow(Widget):
             # Additional lines beneath
             if note.pos().y() > bottomLineY:
                 additionalLineY = bottomLineY + self.config.line_gap * ceil(
-                    (note.pos().y() - bottomLineY) / self.config.line_gap)
+                    (note.pos().y() - bottomLineY) / self.config.line_gap
+                )
                 hasExtraLines = True
 
             # Above
             if note.pos().y() + note.height() < topLineY:
                 additionalLineY = topLineY - self.config.line_gap * ceil(
-                    (topLineY - note.pos().y() - note.height()) / self.config.line_gap)
+                    (topLineY - note.pos().y() - note.height()) / self.config.line_gap
+                )
                 hasExtraLines = True
 
             if hasExtraLines:
-                y = topLineY - self.config.line_gap if note.pos().y() + note.height() < topLineY else bottomLineY + self.config.line_gap
+                y = (
+                    topLineY - self.config.line_gap
+                    if note.pos().y() + note.height() < topLineY
+                    else bottomLineY + self.config.line_gap
+                )
                 step = -self.config.line_gap if y < topLineY else self.config.line_gap
                 while not ((step < 0) ^ (y > additionalLineY)):
                     painter.drawLine(
@@ -473,7 +483,7 @@ class StaffWindow(Widget):
                         y,
                         self.width() / 2 + self.config.staff_horizontal_center_offset + (0.5 + 0.1) * note.width(),
                         # note.pos().x() + (1 + 0.1) * note.width(),
-                        y
+                        y,
                     )
                     y += step
                 painter.drawLine(
@@ -482,22 +492,22 @@ class StaffWindow(Widget):
                     additionalLineY,
                     # self.width() / 2 + STAFF_HORIZONAL_CENTER_OFFSET + (0.5 + 0.1) * note.width(),
                     note.pos().x() + (1 + 0.1) * note.width(),
-                    additionalLineY
+                    additionalLineY,
                 )
         self.update()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     staffWidget = StaffWindow(parent=None)
-    staffWidget.addNote('C4')
-    staffWidget.addNote('E4')
-    staffWidget.addNote('Ab4')
-    staffWidget.addNote('B4')
-    staffWidget.removeNote('B4')
+    staffWidget.addNote("C4")
+    staffWidget.addNote("E4")
+    staffWidget.addNote("Ab4")
+    staffWidget.addNote("B4")
+    staffWidget.removeNote("B4")
     staffWidget.drawNotes()
     # staffWidget.addNote(71)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
-print('staffwindow: ')
+print("staffwindow: ")
 print(sys.path)

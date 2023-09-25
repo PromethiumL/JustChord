@@ -1,9 +1,15 @@
 # coding:utf-8
-from JustChord.gui.widget import *
-from JustChord.core import chord
 import copy
+from dataclasses import dataclass
 
-CHORDLABEL_TIP = """
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction, QColor, QFont, QPalette
+from PyQt6.QtWidgets import QApplication, QColorDialog, QFontDialog, QLabel, QMenu
+
+from JustChord.core import chord
+from JustChord.gui.widget import Widget
+
+CHORD_LABEL_TIP = """
 Usage:
     Move: Arrow keys
     Color: 'C' (computer keyboard)
@@ -27,7 +33,7 @@ class ChordWindowConfig:
     max_rest_chords: int = 5
     rest_chords_font_scalar: float = 0.5
     rest_chords_type_font_scalar: float = 0.8
-    default_key_name: str = 'C'
+    default_key_name: str = "C"
     use_roman_notation: bool = False
     show_key_label: bool = True
     auto_key_detection: bool = True
@@ -41,7 +47,7 @@ class ChordWindow(Widget):
         if self.config is None:
             self.config = ChordWindowConfig()
         self.keyName = self.config.default_key_name
-        self.isSharpKey = (self.keyName in chord.KEY_LIST[0])
+        self.isSharpKey = self.keyName in chord.KEY_LIST[0]
         self.connectMonitor()
         self.initUI()
         self.show()
@@ -54,8 +60,8 @@ class ChordWindow(Widget):
             self.config.show_rest_chords = True if flag else False
         if not self.config.show_rest_chords:
             for i in range(1, self.config.max_rest_chords + 1):
-                self.chord_labels[i][0].setText('')
-                self.chord_labels[i][1].setText('')
+                self.chord_labels[i][0].setText("")
+                self.chord_labels[i][1].setText("")
         self.updateKeyLabel()
 
     def toggleKeyLabel(self):
@@ -69,17 +75,25 @@ class ChordWindow(Widget):
     def fontDialog(self):
         font: QFont
         font, valid = QFontDialog.getFont()
-        font_name = font.toString().split(',')[0]
+        font_name = font.toString().split(",")[0]
         if valid:
             print(font.pixelSize())
             for idx, lbs in enumerate(self.chord_labels):
-                lbs[0].setStyleSheet('font-size: {}pt;'.format(
-                    self.config.chord_font_size * (1 if idx == 0 else self.config.rest_chords_font_scalar)))
-                lbs[1].setStyleSheet('font-size: {}pt;'.format(
-                    self.config.chord_font_size * self.config.chord_type_font_scalar * (
-                        1 if idx == 0 else self.config.rest_chords_type_font_scalar)))
+                lbs[0].setStyleSheet(
+                    "font-size: {}pt;".format(
+                        self.config.chord_font_size * (1 if idx == 0 else self.config.rest_chords_font_scalar)
+                    )
+                )
+                lbs[1].setStyleSheet(
+                    "font-size: {}pt;".format(
+                        self.config.chord_font_size
+                        * self.config.chord_type_font_scalar
+                        * (1 if idx == 0 else self.config.rest_chords_type_font_scalar)
+                    )
+                )
             self.key_label.setStyleSheet(
-                'font-size: {}pt;'.format(int(self.config.chord_font_size * self.config.rest_chords_font_scalar)))
+                "font-size: {}pt;".format(int(self.config.chord_font_size * self.config.rest_chords_font_scalar))
+            )
             self.setStyleSheet('QLabel {{ font-family: "{}"; }}'.format(font_name))
 
     def textColorSettingsDialog(self):
@@ -87,9 +101,9 @@ class ChordWindow(Widget):
         if col.isValid():
             pl = QPalette()
             pl.setColor(QPalette.WindowText, col)
-            for l in self.chord_labels:
-                l[0].setPalette(pl)
-                l[1].setPalette(pl)
+            for label in self.chord_labels:
+                label[0].setPalette(pl)
+                label[1].setPalette(pl)
             pl.setColor(QPalette.WindowText, col.darker(150))
             self.key_label.setPalette(pl)
 
@@ -104,33 +118,41 @@ class ChordWindow(Widget):
         self.keyName = chord.getKeyName(n, self.isSharpKey)
 
     def updateKeyLabel(self):
-        self.key_label.move(0,
-                            self.chord_labels[-1 if self.config.show_rest_chords else 0][0].pos().y()
-                            + self.chord_labels[-1 if self.config.show_rest_chords else 0][0].height() + 10
-                            )
+        self.key_label.move(
+            0,
+            self.chord_labels[-1 if self.config.show_rest_chords else 0][0].pos().y()
+            + self.chord_labels[-1 if self.config.show_rest_chords else 0][0].height()
+            + 10,
+        )
         self.key_label.setVisible(self.config.show_key_label)
-        self.key_label.setText('Current Key: ' + self.keyName)
+        self.key_label.setText("Current Key: " + self.keyName)
         self.key_label.adjustSize()
 
     def updateChordLabel(self):
         try:
             self.keyName = monitor.KeyDetector.currentKey
             self.updateKeyLabel()
-            l = len(monitor.currentChords)
+            num_chords = len(monitor.currentChords)
             for i in range(1 + self.config.max_rest_chords):
-                if i < l:
+                if i < num_chords:
                     chordObj = copy.deepcopy(monitor.currentChords[i])
                     # chordObj = monitor.currentChords[i]
                     chordObj.updateName(self.keyName, self.config.use_roman_notation)
                 lbs = self.chord_labels[i]
                 # lbs[0].setText('' if i >= l else ((c.name[0]) if ALLOW_SLASH_CHORD else c.get_base_name()))
-                lbs[0].setText('' if i >= l else (
-                    chordObj.name[0] if self.config.allow_slash_chord else chordObj.get_base_name()))
+                lbs[0].setText(
+                    "" if i >= num_chords else (chordObj.name[0] if self.config.allow_slash_chord else chordObj.get_base_name())
+                )
                 lbs[0].adjustSize()
-                lbs[1].move(lbs[0].x() + lbs[0].width() + self.config.chord_name_gap,
-                            lbs[0].y() - 5 if self.config.use_roman_notation else lbs[0].y() + lbs[0].height() - lbs[
-                                1].height())
-                lbs[1].setText('' if i >= l else chordObj.name[1])
+                lbs[1].move(
+                    lbs[0].x() + lbs[0].width() + self.config.chord_name_gap,
+                    (
+                        lbs[0].y() - 5
+                        if self.config.use_roman_notation
+                        else lbs[0].y() + lbs[0].height() - lbs[1].height()
+                    ),
+                )
+                lbs[1].setText("" if i >= num_chords else chordObj.name[1])
                 lbs[1].adjustSize()
                 if not self.config.show_rest_chords:
                     break
@@ -152,55 +174,54 @@ class ChordWindow(Widget):
         self.pl = QPalette()
         self.pl.setColor(QPalette.WindowText, QColor(50, 50, 50))
         self.pl_darker = QPalette()
-        self.pl_darker.setColor(QPalette.WindowText,
-                                QColor(50, 50, 50).darker(200))
+        self.pl_darker.setColor(QPalette.WindowText, QColor(50, 50, 50).darker(200))
         self.setPalette(self.pl)
         self.chord_labels = []
 
-        for i in range(self.config.max_rest_chords + 1):
-            lb = QLabel('', self)
-            lb2 = QLabel('', self)
+        for _ in range(self.config.max_rest_chords + 1):
+            lb = QLabel("", self)
+            lb2 = QLabel("", self)
             self.chord_labels.append([lb, lb2])
 
         for lbs in self.chord_labels:
             # the best chord's labels
             if self.chord_labels.index(lbs) == 0:
-                lbs[0].setText('Chord...')
-                lbs[0].setStyleSheet(f'font-size: {self.config.chord_font_size}pt;')
+                lbs[0].setText("Chord...")
+                lbs[0].setStyleSheet(f"font-size: {self.config.chord_font_size}pt;")
                 lbs[0].setAlignment(Qt.AlignLeft)
                 lbs[0].adjustSize()
                 lbs[0].setPalette(self.pl)
-                # lbs[0].setToolTip(CHORDLABEL_TIP)
+                # lbs[0].setToolTip(CHORD_LABEL_TIP)
 
                 lbs[1].setStyleSheet(
-                    f'font-size: {self.config.chord_font_size * self.config.chord_type_font_scalar}pt;')
+                    f"font-size: {self.config.chord_font_size * self.config.chord_type_font_scalar}pt;"
+                )
                 lbs[1].setAlignment(Qt.AlignLeft)
                 lbs[1].adjustSize()
-                # lbs[1].setToolTip(CHORDLABEL_TIP)
+                # lbs[1].setToolTip(CHORD_LABEL_TIP)
                 lbs[1].setPalette(self.pl)
                 lbs[1].move(
                     lbs[0].x() + lbs[0].width() + self.config.chord_name_gap,
-                    lbs[0].y() + lbs[0].height() - lbs[1].height()
+                    lbs[0].y() + lbs[0].height() - lbs[1].height(),
                 )
             else:
                 idx = self.chord_labels.index(lbs)
                 prev_lbs = self.chord_labels[idx - 1]
                 font_size = self.config.chord_font_size * self.config.rest_chords_font_scalar
-                lbs[0].setStyleSheet(f'font-size: {font_size}pt;')
+                lbs[0].setStyleSheet(f"font-size: {font_size}pt;")
                 lbs[0].setAlignment(Qt.AlignLeft)
                 lbs[0].adjustSize()
-                lbs[0].setToolTip(CHORDLABEL_TIP)
+                lbs[0].setToolTip(CHORD_LABEL_TIP)
                 lbs[0].setPalette(self.pl)
-                lbs[0].move(0, prev_lbs[0].y() +
-                            prev_lbs[0].height() + (10 if idx == 1 else 0))
-                lbs[1].setStyleSheet(f'font-size: {font_size * self.config.rest_chords_type_font_scalar}pt;')
+                lbs[0].move(0, prev_lbs[0].y() + prev_lbs[0].height() + (10 if idx == 1 else 0))
+                lbs[1].setStyleSheet(f"font-size: {font_size * self.config.rest_chords_type_font_scalar}pt;")
                 lbs[1].setAlignment(Qt.AlignLeft)
                 lbs[1].adjustSize()
-                lbs[1].setToolTip(CHORDLABEL_TIP)
+                lbs[1].setToolTip(CHORD_LABEL_TIP)
                 lbs[1].setPalette(self.pl)
                 lbs[1].move(
                     lbs[0].x() + lbs[0].width() + self.config.chord_name_gap,
-                    lbs[0].y() + lbs[0].height() - lbs[1].height()
+                    lbs[0].y() + lbs[0].height() - lbs[1].height(),
                 )
             # lbs[1].setFrameShape(QFrame.Panel)
             # lbs[1].setFrameShadow(QFrame.Sunken)
@@ -209,7 +230,8 @@ class ChordWindow(Widget):
         self.key_label = QLabel(self.keyName, self)
         self.updateKeyLabel()
         self.key_label.setStyleSheet(
-            f'font-size: {int(self.config.chord_font_size * self.config.rest_chords_font_scalar)}pt;')
+            f"font-size: {int(self.config.chord_font_size * self.config.rest_chords_font_scalar)}pt;"
+        )
         self.key_label.setPalette(self.pl)
         self.key_label.adjustSize()
 
@@ -241,13 +263,21 @@ class ChordWindow(Widget):
         moreResultsAction.triggered.connect(lambda: self.toggleMoreResults(not self.config.show_rest_chords))
 
         # Key Label
-        toggleKeyLabel = QAction('Show Key Label', parent=contextMenu, checkable=True,
-                                 checked=self.config.show_key_label)
+        toggleKeyLabel = QAction(
+            "Show Key Label",
+            parent=contextMenu,
+            checkable=True,
+            checked=self.config.show_key_label,
+        )
         contextMenu.addAction(toggleKeyLabel)
         toggleKeyLabel.triggered.connect(self.toggleKeyLabel)
 
-        toggleRomanNotation = QAction('Use Roman Notation', parent=contextMenu, checkable=True,
-                                 checked=self.config.use_roman_notation)
+        toggleRomanNotation = QAction(
+            "Use Roman Notation",
+            parent=contextMenu,
+            checkable=True,
+            checked=self.config.use_roman_notation,
+        )
         contextMenu.addAction(toggleRomanNotation)
         toggleRomanNotation.triggered.connect(self.toggleRomanNotation)
 
@@ -255,23 +285,32 @@ class ChordWindow(Widget):
 
         # KeySettings
         keyMenu = contextMenu.addMenu("Key Settings")
-        autoDetection = QAction("Auto Detection", keyMenu, checkable=True, checked=self.config.auto_key_detection)
+        autoDetection = QAction(
+            "Auto Detection",
+            keyMenu,
+            checkable=True,
+            checked=self.config.auto_key_detection,
+        )
         autoDetection.triggered.connect(lambda: self.__setattr__("config.auto_key_detection", True))
         keyMenu.addAction(autoDetection)
 
-        for k in "Gb,Db,Ab,Eb,Bb,F,C,G,D,A,E,B,F#".split(','):
-            action = QAction(k, keyMenu, checkable=True,
-                             checked=(k == self.keyName and not self.config.auto_key_detection))
+        for k in "Gb,Db,Ab,Eb,Bb,F,C,G,D,A,E,B,F#".split(","):
+            action = QAction(
+                k,
+                keyMenu,
+                checkable=True,
+                checked=(k == self.keyName and not self.config.auto_key_detection),
+            )
             action.triggered.connect(lambda checked, name=k: self.keyNameClicked(name))
             keyMenu.addAction(action)
 
         contextMenu.addSeparator()
 
-        midi_settings = contextMenu.addAction('Midi in Device...')
+        midi_settings = contextMenu.addAction("Midi in Device...")
         midi_settings.triggered.connect(lambda: QApplication.instance().midi_in_wizard())
 
         # Quit
-        quit_btn = contextMenu.addAction('Quit')
+        quit_btn = contextMenu.addAction("Quit")
         quit_btn.triggered.connect(lambda: QApplication.instance().quit())
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))

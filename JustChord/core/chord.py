@@ -1,19 +1,34 @@
-from JustChord.core.utils import *
-from typing import *
+from JustChord.core.constants import (
+    CHORD_DATA,
+    DEFAULT_KEY,
+    INTERVAL_SIZE,
+    PITCH_INDEX,
+    USE_ROMAN_STYLE,
+)
+from JustChord.core.utils import (
+    addIntervalToNoteName,
+    getInterval,
+    getPitchName,
+    getPitchNumber,
+)
 
 
 class Chord:
-    def __init__(self, rootName: str,
-                 intervals: Set[int] = None,
-                 bassName=None, chordType=None,
-                 blankChord=False):
+    def __init__(
+        self,
+        rootName: str,
+        intervals: set[int] = None,
+        bassName=None,
+        chordType=None,
+        blankChord=False,
+    ):
         if bassName is None:
             bassName = rootName
         self.setRoot(rootName)
         self.setBass(bassName)
-        self.name = ''
+        self.name = ""
         self.chordTypes = []
-        self.intervals: Set[int] = intervals
+        self.intervals: set[int] = intervals
         self.intervalNames = set()
         self.notes = set()
         self.noteNames = set()
@@ -45,7 +60,7 @@ class Chord:
             self.bassPitch = PITCH_INDEX[self.bassName]
 
     def buildChord(self) -> None:
-        self.chordType = ''
+        self.chordType = ""
         self.complexity = 0
         self.recognized = False
         s = set()
@@ -58,8 +73,8 @@ class Chord:
                 break
                 # comment 'break' for more possible results.
         if self.recognized:
-            l = sorted(list(s))
-            self.chordType = l[0][1]
+            lst = sorted(list(s))
+            self.chordType = lst[0][1]
             if self.bassName.upper() != self.rootName.upper():
                 self.complexity += 1
                 # Inversion increases the complexity.
@@ -67,10 +82,7 @@ class Chord:
             self.chordType = None
             # 'recognized' remains False.
 
-        self.notes = set(map(
-            lambda x: (x + PITCH_INDEX[self.rootName] % 12),
-            list(self.intervals)
-        ))
+        self.notes = set(map(lambda x: (x + PITCH_INDEX[self.rootName] % 12), list(self.intervals)))
 
     def updateName(self, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
         if not self.recognized:
@@ -83,36 +95,36 @@ class Chord:
             if self.isMinorChord():
                 self.rootName = self.rootName.lower()  # E.g. 'III' -> 'iii'
                 self.bassName = self.bassName.lower()
-                if self.typeName[0] == 'm':
+                if self.typeName[0] == "m":
                     self.typeName = self.typeName[1:]
-                if self.typeName[0:3] == 'dim':
-                    self.typeName = '°' + self.typeName[3:]
+                if self.typeName[0:3] == "dim":
+                    self.typeName = "°" + self.typeName[3:]
         elif self.typeName is None:
-            self.typeName = 'n.c.'
+            self.typeName = "n.c."
         self.name = (
-            self.rootName, self.typeName + (' / ' + self.bassName if self.rootName != self.bassName else '')
+            self.rootName,
+            self.typeName + (" / " + self.bassName if self.rootName != self.bassName else ""),
         )
 
     def parseChordType(self, chordType) -> bool:
-        chordType.replace(' ', '')
+        chordType.replace(" ", "")
         for intervals, name, complexity in CHORD_DATA:
             if name == chordType:
                 self.complexity = complexity
                 self.intervals = intervals
-                self.notes = list(
-                    map(lambda x: (x + self.rootPitch) % 12, list(intervals)))
+                self.notes = list(map(lambda x: (x + self.rootPitch) % 12, list(intervals)))
                 self.chordType = chordType
                 return True
         return False
 
     def isInterval(self):
-        return len(self.intervals) == 2 and self.intervals != set([INTERVAL_SIZE['U1'], INTERVAL_SIZE['P5']])
+        return len(self.intervals) == 2 and self.intervals != set([INTERVAL_SIZE["U1"], INTERVAL_SIZE["P5"]])
 
     def isMinorChord(self):
-        return INTERVAL_SIZE['M3'] not in self.intervals and INTERVAL_SIZE['m3'] in self.intervals
+        return INTERVAL_SIZE["M3"] not in self.intervals and INTERVAL_SIZE["m3"] in self.intervals
 
     def getBaseName(self, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
-        return getPitchName(self.rootPitch) + ' ' + self.chordType
+        return getPitchName(self.rootPitch) + " " + self.chordType
 
     def spellNoteNames(self):
         self.noteNames = set()
@@ -127,9 +139,9 @@ class Chord:
 
     def __repr__(self):
         if not self.recognized:
-            return '<unrecognized>'
+            return "<unrecognized>"
         else:
-            return f'[{self.rootName} {self.typeName}]'
+            return f"[{self.rootName} {self.typeName}]"
 
 
 def identifyChord(noteList, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
@@ -168,6 +180,6 @@ def main():
     print(c)
 
 
-if __name__ == '__main__':
-    print(addIntervalToNoteName('Bx4', 'P5'))
+if __name__ == "__main__":
+    print(addIntervalToNoteName("Bx4", "P5"))
     main()

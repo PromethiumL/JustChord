@@ -1,11 +1,8 @@
-import rtmidi as rt
-import time
 import threading
+import time
 
-from PyQt5.QtCore import *
-
-import sys
-import os
+import rtmidi as rt
+from PyQt6.QtCore import QThread, pyqtSignal
 
 from JustChord.core import chord
 
@@ -22,27 +19,27 @@ midiIn = rt.MidiIn()
 
 class KeyDetector:
     WINDOW_SIZE = 16
-    DEFAULT_KEY = 'C'
+    DEFAULT_KEY = "C"
     RELATED_KEYS = {
-        0: ['Db', 'Ab', 'Eb', 'Bb', 'F', 'C', 'G'],
-        5: ['Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F', 'C'],
-        10: ['B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F'],
-        3: ['E', 'B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb'],
-        8: ['A', 'E', 'B', 'Gb', 'Db', 'Ab', 'Eb'],
-        1: ['D', 'A', 'E', 'B', 'Gb', 'Db', 'Ab'],
-        6: ['G', 'D', 'A', 'E', 'B', 'Gb', 'Db'],
-        11: ['C', 'G', 'D', 'A', 'E', 'B', 'Gb'],
-        4: ['F', 'C', 'G', 'D', 'A', 'E', 'B'],
-        9: ['Bb', 'F', 'C', 'G', 'D', 'A', 'E'],
-        2: ['Eb', 'Bb', 'F', 'C', 'G', 'D', 'A'],
-        7: ['Ab', 'Eb', 'Bb', 'F', 'C', 'G', 'D']
+        0: ["Db", "Ab", "Eb", "Bb", "F", "C", "G"],
+        5: ["Gb", "Db", "Ab", "Eb", "Bb", "F", "C"],
+        10: ["B", "Gb", "Db", "Ab", "Eb", "Bb", "F"],
+        3: ["E", "B", "Gb", "Db", "Ab", "Eb", "Bb"],
+        8: ["A", "E", "B", "Gb", "Db", "Ab", "Eb"],
+        1: ["D", "A", "E", "B", "Gb", "Db", "Ab"],
+        6: ["G", "D", "A", "E", "B", "Gb", "Db"],
+        11: ["C", "G", "D", "A", "E", "B", "Gb"],
+        4: ["F", "C", "G", "D", "A", "E", "B"],
+        9: ["Bb", "F", "C", "G", "D", "A", "E"],
+        2: ["Eb", "Bb", "F", "C", "G", "D", "A"],
+        7: ["Ab", "Eb", "Bb", "F", "C", "G", "D"],
     }
     frequencyDict = {}
-    currentKey = 'C'
+    currentKey = "C"
 
     def __init__(self):
         self.noteWindow = []
-        for keyName in "C,F,Bb,Eb,Ab,Db,Gb,B,E,A,D,G".split(','):
+        for keyName in "C,F,Bb,Eb,Ab,Db,Gb,B,E,A,D,G".split(","):
             self.frequencyDict[keyName] = 0
 
     def addNote(self, pitch):
@@ -73,13 +70,13 @@ def initRtMidi(port=DEFAULT_MIDI_IN_PORT):
     portCount = midiIn.get_port_count()
 
     if port is None or port >= portCount:
-        print(f'port {port} is invalid. Fallback to default port.')
+        print(f"port {port} is invalid. Fallback to default port.")
         return
 
     if portCount:
         # midiin.openPort(port)
         midiIn.open_port(port)
-        print('started monitoring MIDI input... port {}'.format(port))
+        print("started monitoring MIDI input... port {}".format(port))
         global MIDI_INITIALIZED
         MIDI_INITIALIZED = True
     else:
@@ -165,13 +162,13 @@ class Monitor(QThread):
         global currentChords
         global ALLOW_SLASH_CHORD
         if notes:
-            l = chord.identifyChord(notes)
-            currentChords = l
-            if len(list(filter(lambda c: not c.isBlank, l))) == 0:
+            chord_list = chord.identifyChord(notes)
+            currentChords = chord_list
+            if len(list(filter(lambda c: not c.isBlank, chord_list))) == 0:
                 root = chord.getPitchName(min(notes))
                 currentChords.append(chord.Chord(root, [], root, blankChord=True))
-        self.trigger.emit('update')
+        self.trigger.emit("update")
 
 
-if __name__ == '__monitor__':
-    print('loading monitor..')
+if __name__ == "__monitor__":
+    print("loading monitor..")

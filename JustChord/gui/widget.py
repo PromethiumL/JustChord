@@ -1,6 +1,10 @@
 # coding:utf-8
-from PyQt6.QtCore import Qt
+from PyQt6 import QtGui
+from PyQt6.QtCore import QPoint, Qt
+from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QApplication, QFrame
+
+import JustChord.gui.monitor as monitor
 
 
 class Widget(QFrame):
@@ -13,17 +17,17 @@ class Widget(QFrame):
         self._initUI()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape or event.key() == Qt.Key_Q:
+        if event.key() == Qt.Key.Key_Escape or event.key() == Qt.Key.Key_Q:
             QApplication.instance().quit()
 
-    def mousePressEvent(self, e):
-        if e.button == Qt.LeftButton:
+    def mousePressEvent(self, e: QMouseEvent):
+        if e.button == Qt.MouseButton.LeftButton:
             self.isMouseDown = True
-        self.p = e.globalPos()
+        self.p = e.globalPosition()
 
-    def mouseMoveEvent(self, e):
-        p = e.globalPos()
-        self.move(self.pos() + p - self.p)
+    def mouseMoveEvent(self, e: QMouseEvent):
+        p = e.globalPosition()
+        self.move(self.pos() + (p - self.p).toPoint())
         self.p = p
 
     def mouseReleaseEvent(self, e):
@@ -40,12 +44,11 @@ class Widget(QFrame):
                 print("WARNING: No MIDI device is selected")
 
     def center(self):
-        self.screenX = QApplication.desktop().width()
-        self.screenY = QApplication.desktop().height()
-        self.move(self.screenX / 2, self.screenY / 2)
+        cp = QtGui.QGuiApplication.primaryScreen().availableGeometry().center()
+        self.move(cp.x(), cp.y())
 
     def moveWindows(self, x, y):
-        # print(self.pos())
+        # print(self.pos)
         p = self.pos()
         newx = p.x() + x
         newy = p.y() + y

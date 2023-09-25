@@ -1,2 +1,2 @@
-if __name__ == 'core':
+if __name__ == "core":
     print("Package core loaded")

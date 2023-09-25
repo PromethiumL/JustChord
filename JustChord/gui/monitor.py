@@ -84,11 +84,19 @@ def initRtMidi(port=DEFAULT_MIDI_IN_PORT):
 
 
 class Monitor(QThread):
+    class __Monitor:
+        def __init__(self) -> None:
+            pass
+
+    instance = None
     trigger = pyqtSignal(str)
     keyDetector = KeyDetector()
 
     def __init__(self):
         super(Monitor, self).__init__()
+        print("Initializing Monitor")
+        if not Monitor.instance:
+            Monitor.instance = Monitor.__Monitor()
         self.msg_queue = []
         self.lock = threading.RLock()
 
@@ -169,6 +177,12 @@ class Monitor(QThread):
                 currentChords.append(chord.Chord(root, [], root, blankChord=True))
         self.trigger.emit("update")
 
+    @property
+    def midiIn(self):
+        global midiIn
+        return midiIn
 
-if __name__ == "__monitor__":
-    print("loading monitor..")
+
+monitor: Monitor
+if __name__ != "__main__":
+    monitor = Monitor()

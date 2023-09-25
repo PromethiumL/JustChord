@@ -4,11 +4,11 @@ from functools import cache
 from typing import Tuple
 
 import pygame.midi as midi
-from monitor import Monitor
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QMouseEvent, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QApplication, QWidget
 
+import JustChord.gui.monitor as monitor
 from JustChord.gui import widget
 
 keyboard_offsets = [
@@ -24,19 +24,19 @@ keyboard_offsets = [
     3 / 7,
 ]
 
-# light_gray_brush = QBrush(Qt.lightGray, Qt.SolidPattern)
-# gray_brush = QBrush(Qt.darkGray, Qt.SolidPattern)
-# white_brush = QBrush(Qt.white, Qt.SolidPattern)
-# green_brush = QBrush(QColor(0x32, 0xf0, 0x80), Qt.SolidPattern)
-# dark_green_brush = QBrush(QColor(0x11, 0xc1, 0x57), Qt.SolidPattern)
-# blue_brush = QBrush(QColor(0, 0x90, 0xff), Qt.SolidPattern)
-# light_blue_brush = QBrush(QColor(0x44, 0x99, 0xff), Qt.SolidPattern)
-# dark_blue_brush = QBrush(QColor(0, 0x80, 0xdd), Qt.SolidPattern)
+# light_gray_brush = QBrush(Qt.lightGray, Qt.BrushStyle.SolidPattern)
+# gray_brush = QBrush(Qt.darkGray, Qt.BrushStyle.SolidPattern)
+# white_brush = QBrush(Qt.white, Qt.BrushStyle.SolidPattern)
+# green_brush = QBrush(QColor(0x32, 0xf0, 0x80), Qt.BrushStyle.SolidPattern)
+# dark_green_brush = QBrush(QColor(0x11, 0xc1, 0x57), Qt.BrushStyle.SolidPattern)
+# blue_brush = QBrush(QColor(0, 0x90, 0xff), Qt.BrushStyle.SolidPattern)
+# light_blue_brush = QBrush(QColor(0x44, 0x99, 0xff), Qt.BrushStyle.SolidPattern)
+# dark_blue_brush = QBrush(QColor(0, 0x80, 0xdd), Qt.BrushStyle.SolidPattern)
 
 
 @cache
 def get_brush(color: Tuple[int, int, int]):
-    return QBrush(QColor(*color), Qt.SolidPattern)
+    return QBrush(QColor(*color), Qt.BrushStyle.SolidPattern)
 
 
 def is_black(pitch):
@@ -90,7 +90,7 @@ class KeyboardWidgetConfig:
     show_sustain_bar: bool = True
     midi_playback_instrument_id: int = 4
     keyboard_default_velocity: int = 100
-    enable_pygame_midi_playback: bool = True
+    enable_pygame_midi_playback: bool = False
     default_window_height: int = 200
 
 
@@ -110,7 +110,7 @@ class KeyboardWidget(QWidget):
         self.pen = QPen(
             QColor(*self.config.keyboard_frame_color),
             self.config.keyboard_frame_stroke_width,
-            Qt.SolidLine,
+            Qt.PenStyle.SolidLine,
         )
         self.painter = QPainter(self)
         self.painter.setPen(self.pen)
@@ -120,8 +120,8 @@ class KeyboardWidget(QWidget):
         self.update()
 
         midi.init()
-        self.midi_player = midi.Output(0)
-        self.midi_player.set_instrument(self.config.midi_playback_instrument_id)
+        # self.midi_player = midi.Output(0)
+        # self.midi_player.set_instrument(self.config.midi_playback_instrument_id)
 
         # try:
         #
@@ -191,7 +191,7 @@ class KeyboardWidget(QWidget):
                 elif p in self.midi_sustained_notes:
                     painter.setBrush(get_brush(config.keyboard_white_key_midi_sustained_color))
                 else:
-                    painter.setBrush(Qt.NoBrush)
+                    painter.setBrush(Qt.BrushStyle.NoBrush)
 
                 if p in self.mouse_pressed_notes:
                     painter.setBrush(get_brush(config.keyboard_white_key_mouse_pressed_color))
@@ -227,17 +227,17 @@ class KeyboardWidget(QWidget):
                 QPen(
                     QColor(*config.sustain_bar_color),
                     config.sustain_bar_thickness,
-                    Qt.SolidLine,
+                    Qt.PenStyle.SolidLine,
                 )
             )
             painter.drawLine(0, 0, self.width(), 0)
         self.update()
 
     def generatePixmap(self):
-        self.pixmap.fill(Qt.transparent)
+        self.pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(self.pixmap)
         painter.setPen(self.pen)
-        painter.setBrush(Qt.NoBrush)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         for i in range(self.range()):  # white keys
             p = self.config.min_pitch + i
             if is_black(p):
@@ -267,14 +267,14 @@ class KeyboardWidget(QWidget):
     def keyPressEvent(self, e: QKeyEvent):
         if e.isAutoRepeat():
             return
-        if e.key() == Qt.Key_Space:  # hold sustain pedal
+        if e.key() == Qt.Key.Key_Space:  # hold sustain pedal
             self.is_sustain_down = True
             # print('sustain')
 
     def keyReleaseEvent(self, e: QKeyEvent):
         if e.isAutoRepeat():
             return
-        if e.key() == Qt.Key_Space:  # release sustain pedal
+        if e.key() == Qt.Key.Key_Space:  # release sustain pedal
             self.is_sustain_down = False
             for p in list(self.mouse_sustained_notes):
                 if p not in self.mouse_pressed_notes:
@@ -283,8 +283,8 @@ class KeyboardWidget(QWidget):
             # print('released')
 
     def mousePressEvent(self, e: QMouseEvent):
-        x = e.pos().x()
-        y = e.pos().y()
+        x = e.position().x()
+        y = e.position().y()
         pitch = self.posToPitch(x, y)
         if self.config.min_pitch <= pitch <= self.config.max_pitch:
             self.addNote(pitch)
@@ -305,8 +305,8 @@ class KeyboardWidget(QWidget):
             self.mouse_sustained_notes.add(pitch)
 
     def mouseMoveEvent(self, e):  # Glissing notes
-        x = e.pos().x()
-        y = e.pos().y()
+        x = e.position().x()
+        y = e.position().y()
         pitch = self.posToPitch(x, y)
         if pitch < self.config.min_pitch or pitch > self.config.max_pitch:
             return
@@ -315,7 +315,7 @@ class KeyboardWidget(QWidget):
             self.addNote(pitch)
 
     def mouseReleaseEvent(self, e):
-        pitch = self.posToPitch(e.pos().x(), e.pos().y())
+        pitch = self.posToPitch(e.position().x(), e.position().y())
         if pitch in self.mouse_pressed_notes:
             self.removeNote(pitch)
 
@@ -338,4 +338,4 @@ class KeyboardWidget(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     kb = KeyboardWidget()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

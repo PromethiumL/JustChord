@@ -38,4 +38,4 @@ class ConfigViewer(QDialog):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     configViewer = ConfigViewer()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+import JustChord.gui.monitor as monitor
 from JustChord.gui.chordwindow import ChordWindow
 from JustChord.gui.keyboardwidget import KeyboardWidget
 from JustChord.gui.staffwindow import StaffWindow
@@ -50,29 +51,29 @@ class JustChordMainWindow(QWidget):
         self.setLayout(layout)
 
         """This makes the UI semi-transparent"""
-        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
         # self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         # self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         # self.setAttribute(Qt.WA_AlwaysStackOnTop)
 
         """Size Grips"""
         self.size_grips = []
         self.show_size_grips = True
-        for position in "TL,TR,BL,BR".split(","):
+        for pos in "TL,TR,BL,BR".split(","):
             grip = QSizeGrip(self)
             grip.mouseMoveEvent = lambda *args: None
-            grip.setObjectName(position)
+            grip.setObjectName(pos)
             grip.setFixedSize(20, 20)
             # grip.setStyleSheet('border: 3px solid #6f6; border-radius: 5px; background-color: #373; mouse:pointer;')
             w, h = self.width(), self.height()
-            if position == "TL":
+            if pos == "TL":
                 grip.move(0, 0)
-            if position == "TR":
+            if pos == "TR":
                 grip.move(w - 20, 0)
-            if position == "BL":
+            if pos == "BL":
                 grip.move(0, h - 20)
-            if position == "BR":
+            if pos == "BR":
                 grip.move(w - 20, h - 20)
             grip.setVisible(self.show_size_grips)
             self.size_grips.append(grip)
@@ -97,16 +98,16 @@ class JustChordMainWindow(QWidget):
         quit_btn = contextMenu.addAction("Quit")
         quit_btn.triggered.connect(lambda: QApplication.instance().quit())
 
-        contextMenu.exec_(self.mapToGlobal(e.pos()))
+        contextMenu.exec(self.mapToGlobal(e.pos()))
 
     def mousePressEvent(self, e):
-        if e.button == Qt.LeftButton:
+        if e.button == Qt.MouseButton.LeftButton:
             self.isMouseDown = True
-        self.p = e.globalPos()
+        self.p = e.globalPosition()
 
     def mouseMoveEvent(self, e):
-        p = e.globalPos()
-        self.move(self.pos() + p - self.p)
+        p = e.globalPosition()
+        self.move(self.pos() + (p - self.p).toPoint())
         self.p = p
 
     def mouseReleaseEvent(self, e):
@@ -143,7 +144,6 @@ class JustChordApp(QApplication):
     def __init__(self):
         try:
             super(JustChordApp, self).__init__(sys.argv)
-            self.setAttribute(Qt.AA_EnableHighDpiScaling, True)
             # apply_stylesheet(self, theme='light_cyan.xml')
 
             # Init MIDI
@@ -170,9 +170,9 @@ class JustChordApp(QApplication):
                 jcMainWindow.pos().x() + (jcMainWindow.width() - jcKeyboardWidget.width()) // 2,
                 jcMainWindow.pos().y() + jcMainWindow.height(),
             )
-            Widget.Widget.monitor.trigger.connect(jcKeyboardWidget.updateNotes)
+            Widget.monitor.trigger.connect(jcKeyboardWidget.updateNotes)
 
-            sys.exit(self.exec_())
+            sys.exit(self.exec())
 
         except Exception as e:
             print(e)
@@ -210,13 +210,13 @@ class MidiSelectionDialog(QDialog):
         midiView.setCurrentRow(0)
         buttons = QDialogButtonBox(self)
 
-        buttons.addButton("Cancel", QDialogButtonBox.RejectRole)
+        buttons.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
         buttons.rejected.connect(self.reject)
 
-        refresh_btn = buttons.addButton("Refresh", QDialogButtonBox.ActionRole)
+        refresh_btn = buttons.addButton("Refresh", QDialogButtonBox.ButtonRole.ActionRole)
         refresh_btn.clicked.connect(self.onRefresh)
 
-        ok_btn = buttons.addButton("OK", QDialogButtonBox.AcceptRole)
+        ok_btn = buttons.addButton("OK", QDialogButtonBox.ButtonRole.AcceptRole)
         buttons.accepted.connect(self.accept)
         ok_btn.setDefault(True)
 

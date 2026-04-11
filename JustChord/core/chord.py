@@ -91,9 +91,7 @@ class Chord:
           but not when "m" is part of a word ("minor 3rd" stays)
         - Convert "dim" to "°"
         """
-        if typeName == "m" or (
-            typeName.startswith("m") and len(typeName) > 1 and not typeName[1].islower()
-        ):
+        if typeName == "m" or (typeName.startswith("m") and len(typeName) > 1 and not typeName[1].islower()):
             typeName = typeName[1:]
         if typeName.startswith("dim"):
             typeName = "°" + typeName[3:]

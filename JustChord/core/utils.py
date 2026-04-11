@@ -28,6 +28,26 @@ def getPitchNumber(name):
     return result
 
 
+def _getPitchNameByLetter(pitch, specified_letter, with_octave):
+    """Find the enharmonic spelling of pitch that matches specified_letter."""
+    p = pitch % 12
+    candidates = [s for s in PITCH_INDEX if s[0] == specified_letter]
+    if not candidates:
+        return getPitchName(pitch, with_octave=True)
+    for s in candidates:
+        if PITCH_INDEX[s] % 12 != p:
+            continue
+        if not with_octave:
+            return s
+        octave = getPitchOctaveNumber(pitch)
+        if PITCH_INDEX[s] > 12:
+            octave += 1
+        elif PITCH_INDEX[s] < 0:
+            octave -= 1
+        return s + str(octave)
+    return None
+
+
 def getPitchName(
     pitch,
     key=DEFAULT_KEY,
@@ -35,41 +55,20 @@ def getPitchName(
     with_octave=False,
     specified_letter="",
 ):
-    """specified_letter will not work when roman_style == True"""
+    if specified_letter in {"C", "D", "E", "F", "G", "A", "B"} and not roman_style:
+        result = _getPitchNameByLetter(pitch, specified_letter, with_octave)
+        if result is not None:
+            return result
 
     p = pitch % 12
-    accidentalNumber = getAccidentalNumber(key)
     offset = 0
-
-    if specified_letter in {"C", "D", "E", "F", "G", "A", "B"} and not roman_style:
-        candidates = list(filter(lambda s: s[0] == specified_letter, list(PITCH_INDEX)))
-        if candidates == []:
-            result = getPitchName(pitch, with_octave=True)
-            return result
-            # raise Exception("Incorrect Note: letter {} does not match any note".format(specified_letter))
-        for s in candidates:
-            if PITCH_INDEX[s] % 12 == p:
-                letter = s
-                octave = ""
-                if with_octave:
-                    octave = getPitchOctaveNumber(pitch)
-                    if PITCH_INDEX[s] > 12:
-                        octave += 1
-                    if PITCH_INDEX[s] < 0:
-                        octave -= 1
-                    octave = str(octave)
-                return letter + octave
-
     if roman_style:
-        offset += 2  # use roman numerals
-        p += 12 - accidentalNumber
+        offset += 2
+        p += 12 - getAccidentalNumber(key)
 
     octaveInfo = str(getPitchOctaveNumber(pitch)) if with_octave else ""
-
-    if key in KEY_LIST[0]:  # if it's a sharp key
-        return DEGREE_NAMES[offset][p] + octaveInfo
-    else:
-        return DEGREE_NAMES[1 + offset][p] + octaveInfo
+    degree_index = offset if key in KEY_LIST[0] else offset + 1
+    return DEGREE_NAMES[degree_index][p] + octaveInfo
 
 
 def addIntervalToNoteName(name, interval):

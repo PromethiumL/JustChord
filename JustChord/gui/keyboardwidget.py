@@ -157,8 +157,7 @@ class KeyboardWidget(QWidget):
         painter.setPen(self.pen)
 
         active_notes = (
-            self.mouse_pressed_notes | self.mouse_sustained_notes
-            | self.midi_pressed_notes | self.midi_sustained_notes
+            self.mouse_pressed_notes | self.mouse_sustained_notes | self.midi_pressed_notes | self.midi_sustained_notes
         )
 
         # Draw active white keys
@@ -178,17 +177,20 @@ class KeyboardWidget(QWidget):
             painter.setBrush(brush if brush else get_brush(self.config.keyboard_black_key_color))
             x = (p - self.config.min_pitch) * self.black_step()
             painter.drawRect(
-                int(x), 0,
+                int(x),
+                0,
                 int(self.black_step()),
                 int(self.keyboardHeight * self.config.black_key_length_ratio),
             )
 
         if self.is_sustain_down and self.config.show_sustain_bar:
-            painter.setPen(QPen(
-                QColor(*self.config.sustain_bar_color),
-                self.config.sustain_bar_thickness,
-                Qt.PenStyle.SolidLine,
-            ))
+            painter.setPen(
+                QPen(
+                    QColor(*self.config.sustain_bar_color),
+                    self.config.sustain_bar_thickness,
+                    Qt.PenStyle.SolidLine,
+                )
+            )
             painter.drawLine(0, 0, self.width(), 0)
 
     def generatePixmap(self):

@@ -141,9 +141,7 @@ class ChordWindow(Widget):
             else:
                 chordObj = copy.deepcopy(monitor.currentChords[i])
                 chordObj.updateName(self.keyName, self.config.use_roman_notation)
-                root_label.setText(
-                    chordObj.name[0] if self.config.allow_slash_chord else chordObj.getBaseName()
-                )
+                root_label.setText(chordObj.name[0] if self.config.allow_slash_chord else chordObj.getBaseName())
                 type_label.setText(chordObj.name[1])
 
             root_label.adjustSize()

@@ -41,8 +41,10 @@ KEY_SIGNATURE_SLOTS = 7
 
 # Reference notes for where key signature accidentals begin on each clef
 KEY_SIG_START_NOTES = {
-    ("G", "sharp"): "G5", ("G", "flat"): "C5",
-    ("F", "sharp"): "G3", ("F", "flat"): "C3",
+    ("G", "sharp"): "G5",
+    ("G", "flat"): "C5",
+    ("F", "sharp"): "G3",
+    ("F", "flat"): "C3",
 }
 
 # Y-step zigzag patterns (in multiples of line_gap) for laying out key signatures

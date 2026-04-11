@@ -82,36 +82,51 @@ class Chord:
 
         self.notes = set(map(lambda x: (x + PITCH_INDEX[self.rootName] % 12), list(self.intervals)))
 
+    @staticmethod
+    def _romanizeMinorType(typeName):
+        """Format chord type for Roman numeral display of a minor chord.
+
+        In Roman notation, lowercase root already implies minor, so:
+        - Strip the "m" prefix ("m7" -> "7", "mMaj7" -> "Maj7")
+          but not when "m" is part of a word ("minor 3rd" stays)
+        - Convert "dim" to "°"
+        """
+        if typeName == "m" or (
+            typeName.startswith("m") and len(typeName) > 1 and not typeName[1].islower()
+        ):
+            typeName = typeName[1:]
+        if typeName.startswith("dim"):
+            typeName = "°" + typeName[3:]
+        return typeName
+
     def updateName(self, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
         if not self.recognized:
             self.buildChord()
+
         # Spell note names using standard names (Roman numerals can't be used for interval math)
         self.rootName = getPitchName(self.rootPitch, key, roman_style=False)
         self.bassName = getPitchName(self.bassPitch, key, roman_style=False)
         self.typeName = self.chordType
         self.spellNoteNames()
-        # Now set display names (possibly Roman numerals)
+
+        if self.typeName is None:
+            self.typeName = "n.c."
+            return self._buildDisplayName()
+
+        # Apply Roman numeral formatting
         if roman_style:
             self.rootName = getPitchName(self.rootPitch, key, roman_style=True)
             self.bassName = getPitchName(self.bassPitch, key, roman_style=True)
-        if roman_style and self.typeName is not None:
             if self.isMinorChord():
                 self.rootName = self.rootName.lower()
                 self.bassName = self.bassName.lower()
-                # Strip "m" prefix only when it's the minor indicator
-                # (e.g. "m", "m7", "mMaj7"), not part of a word (e.g. "minor 3rd")
-                if self.typeName == "m" or (
-                    self.typeName.startswith("m") and len(self.typeName) > 1 and not self.typeName[1].islower()
-                ):
-                    self.typeName = self.typeName[1:]
-                if self.typeName.startswith("dim"):
-                    self.typeName = "°" + self.typeName[3:]
-        elif self.typeName is None:
-            self.typeName = "n.c."
-        self.name = (
-            self.rootName,
-            self.typeName + (" / " + self.bassName if self.rootName != self.bassName else ""),
-        )
+                self.typeName = self._romanizeMinorType(self.typeName)
+
+        return self._buildDisplayName()
+
+    def _buildDisplayName(self):
+        inversion = " / " + self.bassName if self.rootName != self.bassName else ""
+        self.name = (self.rootName, self.typeName + inversion)
 
     def parseChordType(self, chordType) -> bool:
         chordType.replace(" ", "")

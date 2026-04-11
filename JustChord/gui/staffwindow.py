@@ -35,6 +35,22 @@ accidental_scaling_factors = {
 }
 
 
+CLEFS = ["G", "F"]
+ACCIDENTAL_TYPES = ["sharp", "flat"]
+KEY_SIGNATURE_SLOTS = 7
+
+# Reference notes for where key signature accidentals begin on each clef
+KEY_SIG_START_NOTES = {
+    ("G", "sharp"): "G5", ("G", "flat"): "C5",
+    ("F", "sharp"): "G3", ("F", "flat"): "C3",
+}
+
+# Y-step zigzag patterns (in multiples of line_gap) for laying out key signatures
+KEY_SIG_Y_STEPS = {
+    "sharp": [1.5, -2, 1.5, 1.5, -2, 1.5, -2],
+    "flat": [-1.5, 2, -1.5, 2, -1.5, 2, -1.5],
+}
+
 STAFF_LINES_PER_CLEF = 5
 STAFF_LINE_MARGIN = 0.1  # Extra line extends beyond note by this fraction of note width
 NOTE_OVERLAP_SHIFT = 1.1  # Horizontal shift when notes are a 2nd apart (in line_gaps)
@@ -191,46 +207,40 @@ class StaffWindow(Widget):
         self.drawNotes()
         self.update()
 
+    def _layoutKeySigRow(self, clef, acc_type, begin_x, begin_y, is_sharp_key, num_accidentals):
+        """Position and show/hide one row of key signature accidentals."""
+        gap = self.config.line_gap
+        x_gap = self.config.key_signature_horizontal_gap
+        show = is_sharp_key == (acc_type == "sharp")
+        w = int(gap * accidental_scaling_factors[acc_type][0])
+        h = int(gap * 2 * accidental_scaling_factors[acc_type][1])
+
+        x = begin_x
+        y = begin_y + _accidental_widget_vertical_offsets[acc_type] * gap
+        for i in range(KEY_SIGNATURE_SLOTS):
+            svg = self.keySignatures[clef][acc_type][i]
+            svg.setGeometry(int(x), int(y), w, h)
+            svg.setVisible(show and i < num_accidentals)
+            x += svg.width() * x_gap
+            y += gap * KEY_SIG_Y_STEPS[acc_type][i]
+
     def setKeySignatures(self, keyName="C"):
         if keyName not in NATURAL_SCALES:
             raise Exception("invalid keyName{}".format(keyName))
         if keyName == "C":
-            for clef, name in product(["G", "F"], ["sharp", "flat"]):
-                for svg in self.keySignatures[clef][name]:
+            for clef, acc_type in product(CLEFS, ACCIDENTAL_TYPES):
+                for svg in self.keySignatures[clef][acc_type]:
                     svg.setVisible(False)
             return
-        isSharpKey = keyName in KEY_LIST[0]
-        number = KEY_LIST[0 if isSharpKey else 1].index(keyName) + 1
-        beginX = self.width() / 2 - self.config.staff_width / 2
-        beginX += self.config.key_signature_horizontal_start * self.config.staff_width
-        xGap = self.config.key_signature_horizontal_gap
-        sharp_beginY1 = self.calcNoteHeight("G5")
-        sharp_beginY2 = self.calcNoteHeight("G3")
-        flat_beginY1 = self.calcNoteHeight("C5")
-        flat_beginY2 = self.calcNoteHeight("C3")  # offset 1 upwards
-        for clef in ["G", "F"]:
-            for name, beginYs in [
-                ("sharp", (sharp_beginY1, sharp_beginY2)),
-                ("flat", (flat_beginY1, flat_beginY2)),
-            ]:
-                beginY = beginYs[0] if clef == "G" else beginYs[1]
-                x = beginX
-                y = beginY + _accidental_widget_vertical_offsets[name] * self.config.line_gap
-                for i in range(7):
-                    self.keySignatures[clef][name][i].setGeometry(
-                        int(x),
-                        int(y),
-                        int(self.config.line_gap * accidental_scaling_factors[name][0]),
-                        int(self.config.line_gap * 2 * accidental_scaling_factors[name][1]),
-                    )
-                    visible = isSharpKey ^ (name != "sharp") and i < number
-                    self.keySignatures[clef][name][i].setVisible(visible)
-                    x += self.keySignatures[clef][name][i].width() * xGap
-                    if name == "sharp":
-                        deltaY = 1.5 if i % 2 == (1 if i > 2 else 0) else -2
-                    else:
-                        deltaY = -1.5 if i % 2 == 0 else 2
-                    y += self.config.line_gap * deltaY
+
+        is_sharp_key = keyName in KEY_LIST[0]
+        num_accidentals = KEY_LIST[0 if is_sharp_key else 1].index(keyName) + 1
+        begin_x = self.width() / 2 - self.config.staff_width / 2
+        begin_x += self.config.key_signature_horizontal_start * self.config.staff_width
+
+        for clef, acc_type in product(CLEFS, ACCIDENTAL_TYPES):
+            begin_y = self.calcNoteHeight(KEY_SIG_START_NOTES[(clef, acc_type)])
+            self._layoutKeySigRow(clef, acc_type, begin_x, begin_y, is_sharp_key, num_accidentals)
 
     def initUI(self):
         self.staffWidth = self.config.staff_width

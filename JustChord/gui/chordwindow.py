@@ -129,39 +129,35 @@ class ChordWindow(Widget):
         self.key_label.adjustSize()
 
     def updateChordLabel(self):
-        try:
-            self.keyName = monitor.KeyDetector.currentKey
-            self.updateKeyLabel()
-            num_chords = len(monitor.currentChords)
-            for i in range(1 + self.config.max_rest_chords):
-                if i < num_chords:
-                    chordObj = copy.deepcopy(monitor.currentChords[i])
-                    # chordObj = monitor.currentChords[i]
-                    chordObj.updateName(self.keyName, self.config.use_roman_notation)
-                lbs = self.chord_labels[i]
-                # lbs[0].setText('' if i >= l else ((c.name[0]) if ALLOW_SLASH_CHORD else c.get_base_name()))
-                lbs[0].setText(
-                    ""
-                    if i >= num_chords
-                    else (chordObj.name[0] if self.config.allow_slash_chord else chordObj.getBaseName())
-                )
-                lbs[0].adjustSize()
-                lbs[1].move(
-                    lbs[0].x() + lbs[0].width() + self.config.chord_name_gap,
-                    (
-                        lbs[0].y() - 5
-                        if self.config.use_roman_notation
-                        else lbs[0].y() + lbs[0].height() - lbs[1].height()
-                    ),
-                )
-                lbs[1].setText("" if i >= num_chords else chordObj.name[1])
-                lbs[1].adjustSize()
-                if not self.config.show_rest_chords:
-                    break
+        self.keyName = monitor.KeyDetector.currentKey
+        self.updateKeyLabel()
+        num_chords = len(monitor.currentChords)
 
-            self.update()
-        except Exception as e:
-            print(e)
+        for i in range(1 + self.config.max_rest_chords):
+            root_label, type_label = self.chord_labels[i]
+            if i >= num_chords:
+                root_label.setText("")
+                type_label.setText("")
+            else:
+                chordObj = copy.deepcopy(monitor.currentChords[i])
+                chordObj.updateName(self.keyName, self.config.use_roman_notation)
+                root_label.setText(
+                    chordObj.name[0] if self.config.allow_slash_chord else chordObj.getBaseName()
+                )
+                type_label.setText(chordObj.name[1])
+
+            root_label.adjustSize()
+            if self.config.use_roman_notation:
+                type_y = root_label.y() - 5
+            else:
+                type_y = root_label.y() + root_label.height() - type_label.height()
+            type_label.move(root_label.x() + root_label.width() + self.config.chord_name_gap, type_y)
+            type_label.adjustSize()
+
+            if not self.config.show_rest_chords:
+                break
+
+        self.update()
 
     def _setup_label_pair(self, root_label, type_label, root_font_size, type_font_size):
         """Configure a pair of labels (root name + chord type) with consistent styling."""

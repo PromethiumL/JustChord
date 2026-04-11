@@ -133,61 +133,62 @@ class KeyboardWidget(QWidget):
         self.setWindowTitle("Virtual Keyboard")
         self.show()
 
+    def _key_brush(self, pitch):
+        """Resolve the brush for a pressed/sustained key. Mouse overrides MIDI."""
+        key_type = "white" if is_white(pitch) else "black"
+        cfg = self.config
+        # Mouse input takes priority over MIDI
+        if pitch in self.mouse_pressed_notes:
+            source, state = "mouse", "pressed"
+        elif pitch in self.mouse_sustained_notes:
+            source, state = "mouse", "sustained"
+        elif pitch in self.midi_pressed_notes:
+            source, state = "midi", "pressed"
+        elif pitch in self.midi_sustained_notes:
+            source, state = "midi", "sustained"
+        else:
+            return None
+        color = getattr(cfg, f"keyboard_{key_type}_key_{source}_{state}_color")
+        return get_brush(color)
+
     def paintEvent(self, e):
         painter = QPainter(self)
         painter.drawPixmap(QPoint(0, 0), self.pixmap)
-
         painter.setPen(self.pen)
 
-        config = self.config
-        notes_to_draw = (
-            self.mouse_pressed_notes | self.mouse_sustained_notes | self.midi_pressed_notes | self.midi_sustained_notes
+        active_notes = (
+            self.mouse_pressed_notes | self.mouse_sustained_notes
+            | self.midi_pressed_notes | self.midi_sustained_notes
         )
-        for p in notes_to_draw:
-            if is_white(p):
-                if p in self.midi_pressed_notes:
-                    painter.setBrush(get_brush(config.keyboard_white_key_midi_pressed_color))
-                elif p in self.midi_sustained_notes:
-                    painter.setBrush(get_brush(config.keyboard_white_key_midi_sustained_color))
-                else:
-                    painter.setBrush(Qt.BrushStyle.NoBrush)
 
-                if p in self.mouse_pressed_notes:
-                    painter.setBrush(get_brush(config.keyboard_white_key_mouse_pressed_color))
-                elif p in self.mouse_sustained_notes:
-                    painter.setBrush(get_brush(config.keyboard_white_key_mouse_sustained_color))
+        # Draw active white keys
+        for p in active_notes:
+            if not is_white(p):
+                continue
+            brush = self._key_brush(p)
+            painter.setBrush(brush if brush else Qt.BrushStyle.NoBrush)
+            x = count_accumulated_white_keys(self.config.min_pitch, p) * self.white_step()
+            painter.drawRect(int(x), 0, int(self.white_step()), self.keyboardHeight)
 
-                x = count_accumulated_white_keys(self.config.min_pitch, p) * self.white_step()
-                painter.drawRect(int(x), 0, int(self.white_step()), self.keyboardHeight)
+        # Draw all black keys (active ones get highlight color, inactive get default)
         for p in range(self.config.min_pitch, self.config.max_pitch + 1):
-            if is_black(p):
-                if p in self.midi_pressed_notes:
-                    painter.setBrush(get_brush(config.keyboard_black_key_midi_pressed_color))
-                elif p in self.midi_sustained_notes:
-                    painter.setBrush(get_brush(config.keyboard_black_key_midi_sustained_color))
-                else:
-                    painter.setBrush(get_brush(config.keyboard_black_key_color))
-
-                if p in self.mouse_pressed_notes:
-                    painter.setBrush(get_brush(config.keyboard_black_key_mouse_pressed_color))
-                elif p in self.mouse_sustained_notes:
-                    painter.setBrush(get_brush(config.keyboard_black_key_mouse_sustained_color))
-                x = (p - self.config.min_pitch) * self.black_step()
-                painter.drawRect(
-                    int(x),
-                    0,
-                    int(self.black_step()),
-                    int(self.keyboardHeight * config.black_key_length_ratio),
-                )
-
-        if self.is_sustain_down and config.show_sustain_bar:
-            painter.setPen(
-                QPen(
-                    QColor(*config.sustain_bar_color),
-                    config.sustain_bar_thickness,
-                    Qt.PenStyle.SolidLine,
-                )
+            if not is_black(p):
+                continue
+            brush = self._key_brush(p)
+            painter.setBrush(brush if brush else get_brush(self.config.keyboard_black_key_color))
+            x = (p - self.config.min_pitch) * self.black_step()
+            painter.drawRect(
+                int(x), 0,
+                int(self.black_step()),
+                int(self.keyboardHeight * self.config.black_key_length_ratio),
             )
+
+        if self.is_sustain_down and self.config.show_sustain_bar:
+            painter.setPen(QPen(
+                QColor(*self.config.sustain_bar_color),
+                self.config.sustain_bar_thickness,
+                Qt.PenStyle.SolidLine,
+            ))
             painter.drawLine(0, 0, self.width(), 0)
 
     def generatePixmap(self):

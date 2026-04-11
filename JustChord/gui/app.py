@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 )
 
 import JustChord.gui.monitor as monitor
+from JustChord.core import config
 from JustChord.gui.chordwindow import ChordWindow
 from JustChord.gui.keyboardwidget import KeyboardWidget
 from JustChord.gui.staffwindow import StaffWindow
@@ -38,11 +39,23 @@ class MainWindowConfig:
     grip_size: int = 20
     default_font_size: int = 24
 
+    @classmethod
+    def from_config(cls):
+        win = config.section("window")
+        return cls(
+            window_width=win.get("width", 1024),
+            window_height=win.get("height", 512),
+            default_opacity=win.get("default_opacity", 255),
+            opacity_step=win.get("opacity_step", 5),
+            grip_size=win.get("grip_size", 20),
+            default_font_size=win.get("default_font_size", 24),
+        )
+
 
 class JustChordMainWindow(QWidget):
     def __init__(self, config=None):
         super().__init__()
-        self.config = config or MainWindowConfig()
+        self.config = config or MainWindowConfig.from_config()
         self.setWindowTitle("JustChord")
         self.resize(self.config.window_width, self.config.window_height)
 

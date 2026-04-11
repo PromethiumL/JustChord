@@ -1,0 +1,23 @@
+[project]
+name = "justchord"
+version = "0.2.0"
+description = "Real-time MIDI chord recognition with grand staff notation"
+requires-python = ">=3.12"
+dependencies = [
+    "pyqt6>=6.5",
+    "python-rtmidi>=1.4.0",
+]
+
+[project.scripts]
+justchord = "JustChord.gui.app:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+preview = true

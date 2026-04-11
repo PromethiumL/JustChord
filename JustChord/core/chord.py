@@ -1,3 +1,4 @@
+from JustChord.core import config
 from JustChord.core.constants import (
     CHORD_DATA,
     DEFAULT_KEY,
@@ -164,24 +165,43 @@ class Chord:
             return f"[{self.rootName} {self.typeName}]"
 
 
+def _get_excluded_interval_groups():
+    """Load excluded interval groups from config.
+
+    Each group is a list of interval names that must ALL be present
+    for a chord to be excluded. e.g. [["m3", "A5"]] excludes chords
+    with both minor 3rd and augmented 5th.
+    """
+    raw = config.get("core", "excluded_intervals", [])
+    groups = []
+    for group in raw:
+        pitch_classes = {INTERVAL_SIZE[n] % 12 for n in group if n in INTERVAL_SIZE}
+        if pitch_classes:
+            groups.append(pitch_classes)
+    return groups
+
+
 def identifyChord(noteList, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
-    """Make sure that the 'noteList' is non-empty"""
     if not noteList:
         raise Exception("'identifyChord' received an empty noteList")
     results = []
     notes = sorted(noteList)
-    # get the actual bass (lowest) note
     lowestNote = notes[0] % 12
 
-    # get the pitch set
+    excluded_groups = _get_excluded_interval_groups()
+
     notes = sorted(list(set(map(lambda x: x % 12, notes))))
     for root in notes:
         intervals = set(map(lambda x: getInterval(root, x), notes))
         chord = Chord(root, intervals, lowestNote)
-        if chord.recognized:
-            if root == lowestNote:
-                chord.complexity -= 3
-            results.append(chord)
+        if not chord.recognized:
+            continue
+        # Filter out chords matching any excluded interval combination
+        if any(group.issubset(chord.intervals) for group in excluded_groups):
+            continue
+        if root == lowestNote:
+            chord.complexity -= 3
+        results.append(chord)
     results.sort(key=lambda c: c.complexity)
     return results
 

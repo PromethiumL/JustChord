@@ -12,6 +12,7 @@ from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QMouseEvent, QPainter, QPen, 
 from PyQt6.QtWidgets import QApplication, QWidget
 
 import JustChord.gui.monitor as monitor
+from JustChord.core import config
 from JustChord.gui import widget
 
 
@@ -44,12 +45,12 @@ def count_accumulated_white_keys(lo, hi):
 @dataclass
 class KeyboardWidgetConfig:
     min_pitch: int = 48
-    max_pitch: int = 48 + 37
+    max_pitch: int = 85
     keyboard_frame_color: Tuple[int, int, int] = (0x30, 0x30, 0x30)
     keyboard_frame_stroke_width: int = 2
-    keyboard_white_key_color = (255, 255, 255)
-    keyboard_black_key_color = (0x7F, 0x7F, 0x7F)
-    black_key_length_ratio = 0.6
+    keyboard_white_key_color: Tuple[int, int, int] = (255, 255, 255)
+    keyboard_black_key_color: Tuple[int, int, int] = (0x7F, 0x7F, 0x7F)
+    black_key_length_ratio: float = 0.6
     keyboard_white_key_mouse_pressed_color: Tuple[int, int, int] = (0x32, 0xF0, 0x80)
     keyboard_white_key_mouse_sustained_color: Tuple[int, int, int] = (0x11, 0xC1, 0x57)
     keyboard_black_key_mouse_pressed_color: Tuple[int, int, int] = (0x32, 0xF0, 0x80)
@@ -66,11 +67,43 @@ class KeyboardWidgetConfig:
     enable_pygame_midi_playback: bool = False
     default_window_height: int = 200
 
+    @classmethod
+    def from_config(cls):
+        kb = config.section("keyboard")
+        if not kb:
+            return cls()
+
+        def color(key, default):
+            return tuple(kb.get(key, list(default)))
+
+        return cls(
+            min_pitch=kb.get("min_pitch", 48),
+            max_pitch=kb.get("max_pitch", 85),
+            keyboard_default_velocity=kb.get("default_velocity", 100),
+            black_key_length_ratio=kb.get("black_key_length_ratio", 0.6),
+            default_window_height=kb.get("default_window_height", 200),
+            keyboard_frame_color=color("frame_color", (0x30, 0x30, 0x30)),
+            keyboard_frame_stroke_width=kb.get("frame_stroke_width", 2),
+            keyboard_white_key_color=color("white_key_color", (255, 255, 255)),
+            keyboard_black_key_color=color("black_key_color", (0x7F, 0x7F, 0x7F)),
+            keyboard_white_key_mouse_pressed_color=color("white_key_mouse_pressed_color", (0x32, 0xF0, 0x80)),
+            keyboard_white_key_mouse_sustained_color=color("white_key_mouse_sustained_color", (0x11, 0xC1, 0x57)),
+            keyboard_black_key_mouse_pressed_color=color("black_key_mouse_pressed_color", (0x32, 0xF0, 0x80)),
+            keyboard_black_key_mouse_sustained_color=color("black_key_mouse_sustained_color", (0x11, 0xC1, 0x57)),
+            keyboard_white_key_midi_pressed_color=color("white_key_midi_pressed_color", (0x44, 0x99, 0xFF)),
+            keyboard_white_key_midi_sustained_color=color("white_key_midi_sustained_color", (0, 0x90, 0xFF)),
+            keyboard_black_key_midi_pressed_color=color("black_key_midi_pressed_color", (0x44, 0x99, 0xFF)),
+            keyboard_black_key_midi_sustained_color=color("black_key_midi_sustained_color", (0, 0x80, 0xDD)),
+            sustain_bar_color=color("sustain_bar_color", (0x32, 0xF0, 0x80)),
+            sustain_bar_thickness=kb.get("sustain_bar_thickness", 5),
+            show_sustain_bar=kb.get("show_sustain_bar", True),
+        )
+
 
 class KeyboardWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.config = KeyboardWidgetConfig()
+        self.config = KeyboardWidgetConfig.from_config()
         self.mouse_pressed_notes = set()
         self.mouse_sustained_notes = set()
         self.midi_pressed_notes = set()

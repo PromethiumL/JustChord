@@ -9,7 +9,7 @@ from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtWidgets import QApplication
 
 import JustChord.gui.monitor as monitor
-from JustChord.core import chord
+from JustChord.core import chord, config
 from JustChord.core.constants import KEY_LIST, NATURAL_SCALES, PITCH_INDEX
 from JustChord.core.utils import getPitchOctaveNumber
 from JustChord.gui.imports import resource_path
@@ -88,6 +88,26 @@ class StaffWindowConfig:
     def staff_horizontal_center_offset(self):
         return self.staff_horizontal_center_offset_in_gaps * self.line_gap
 
+    @classmethod
+    def from_config(cls):
+        core = config.section("core")
+        staff = config.section("staff")
+        return cls(
+            default_key_name=core.get("default_key", "C"),
+            line_gap=staff.get("line_gap", 20),
+            staff_width_in_gaps=staff.get("staff_width_in_gaps", 20),
+            default_stroke_width=staff.get("stroke_width", 0.1),
+            staff_horizontal_center_offset_in_gaps=staff.get("center_offset_in_gaps", 2),
+            note_width_scalar=staff.get("note_width_scalar", 12 / 7),
+            accidental_horizontal_offset_scalar=staff.get("accidental_horizontal_offset_scalar", -1),
+            key_signature_horizontal_gap=staff.get("key_signature_horizontal_gap", 0.75),
+            key_signature_horizontal_start=staff.get("key_signature_horizontal_start", 0.2),
+        )
+
+    @property
+    def staff_horizontal_center_offset(self):
+        return self.staff_horizontal_center_offset_in_gaps * self.line_gap
+
 
 class NoteWidget(QSvgWidget):
     def __init__(self, parent):
@@ -159,9 +179,7 @@ class NoteWidget(QSvgWidget):
 class StaffWindow(Widget):
     def __init__(self, parent, config=None):
         super().__init__()
-        self.config = config
-        if config is None:
-            self.config = StaffWindowConfig()
+        self.config = config or StaffWindowConfig.from_config()
         self.setParent(parent)
         self.keyName = self.config.default_key_name
         self.vacant_components = set()  # recycling useless components for less reloading

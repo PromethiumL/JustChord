@@ -6,7 +6,7 @@ from PyQt6.QtGui import QAction, QColor, QPalette
 from PyQt6.QtWidgets import QApplication, QColorDialog, QFontDialog, QLabel, QMenu
 
 import JustChord.gui.monitor as monitor
-from JustChord.core import chord
+from JustChord.core import chord, config
 from JustChord.core.constants import KEY_LIST
 from JustChord.gui.widget import Widget
 
@@ -39,14 +39,31 @@ class ChordWindowConfig:
     show_key_label: bool = True
     auto_key_detection: bool = True
 
+    @classmethod
+    def from_config(cls):
+        core = config.section("core")
+        display = config.section("chord_display")
+        return cls(
+            allow_slash_chord=core.get("allow_slash_chord", True),
+            default_key_name=core.get("default_key", "C"),
+            use_roman_notation=core.get("use_roman_notation", False),
+            auto_key_detection=core.get("auto_key_detection", True),
+            chord_font_size=display.get("font_size", 40),
+            chord_type_font_scalar=display.get("font_scalar_type", 0.7),
+            rest_chords_font_scalar=display.get("font_scalar_rest", 0.5),
+            rest_chords_type_font_scalar=display.get("font_scalar_rest_type", 0.8),
+            chord_name_gap=display.get("name_gap", 10),
+            max_rest_chords=display.get("max_rest_chords", 5),
+            show_rest_chords=display.get("show_rest_chords", True),
+            show_key_label=display.get("show_key_label", True),
+        )
+
 
 class ChordWindow(Widget):
     def __init__(self, parent, config=None):
         super().__init__()
         self.setParent(parent)
-        self.config = config
-        if self.config is None:
-            self.config = ChordWindowConfig()
+        self.config = config or ChordWindowConfig.from_config()
         self.keyName = self.config.default_key_name
         self.isSharpKey = self.keyName in KEY_LIST[0]
         self.connectMonitor()

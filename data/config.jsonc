@@ -1,0 +1,74 @@
+{
+  // Core settings
+  "core": {
+    "default_key": "C",
+    "use_roman_notation": false,
+    "auto_key_detection": true,
+    "allow_slash_chord": true,
+    // Each entry is a group of intervals that must ALL be present to exclude a chord.
+    // e.g. [["m3", "A5"]] filters out chords with both minor 3rd + augmented 5th,
+    // which are often just inversions of major triads.
+    // Multiple groups can be specified: [["m3", "A5"], ["M3", "d5"]]
+    "excluded_intervals": [
+      ["m3", "A5"]
+    ]
+  },
+
+  // Chord label display
+  "chord_display": {
+    "font_size": 40,
+    "font_scalar_type": 0.7,
+    "font_scalar_rest": 0.5,
+    "font_scalar_rest_type": 0.8,
+    "name_gap": 10,
+    "max_rest_chords": 5,
+    "show_rest_chords": true,
+    "show_key_label": true
+  },
+
+  // Staff notation
+  "staff": {
+    "line_gap": 20,
+    "staff_width_in_gaps": 20,
+    "stroke_width": 0.1,
+    "center_offset_in_gaps": 2,
+    "note_width_scalar": 1.714,
+    "accidental_horizontal_offset_scalar": -1,
+    "key_signature_horizontal_gap": 0.75,
+    "key_signature_horizontal_start": 0.2
+  },
+
+  // Virtual keyboard
+  "keyboard": {
+    "min_pitch": 48,
+    "max_pitch": 85,
+    "default_velocity": 100,
+    "black_key_length_ratio": 0.6,
+    "default_window_height": 200,
+    "frame_color": [48, 48, 48],
+    "frame_stroke_width": 2,
+    "white_key_color": [255, 255, 255],
+    "black_key_color": [127, 127, 127],
+    "white_key_mouse_pressed_color": [50, 240, 128],
+    "white_key_mouse_sustained_color": [17, 193, 87],
+    "black_key_mouse_pressed_color": [50, 240, 128],
+    "black_key_mouse_sustained_color": [17, 193, 87],
+    "white_key_midi_pressed_color": [68, 153, 255],
+    "white_key_midi_sustained_color": [0, 144, 255],
+    "black_key_midi_pressed_color": [68, 153, 255],
+    "black_key_midi_sustained_color": [0, 128, 221],
+    "sustain_bar_color": [50, 240, 128],
+    "sustain_bar_thickness": 5,
+    "show_sustain_bar": true
+  },
+
+  // Main window
+  "window": {
+    "width": 1024,
+    "height": 512,
+    "default_opacity": 255,
+    "opacity_step": 5,
+    "grip_size": 20,
+    "default_font_size": 24
+  }
+}

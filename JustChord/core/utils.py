@@ -16,10 +16,8 @@ def getPitchNumber(name):
     if not result:
         raise Exception("Invalid note name: {}".format(name))
     result = result.group(0)
-    # print(result)
     pitchName = result.replace("n", "")
     octave = name[len(pitchName) :]
-    # print('octave = ', octave)
     if not octave:
         octave = 4
     try:
@@ -81,7 +79,6 @@ def addIntervalToNoteName(name, interval):
     pitch = getPitchNumber(name)
     letter = name[0]
     octave = "".join(list(filter(lambda x: ord("0") <= ord(x) <= ord("9"), list(name))))
-    # print("name: {}".format(octave))
     newPitch = pitch + INTERVAL_SIZE[interval]
     letterShift = int(interval[1:]) - 1
     newLetter = "ABCDEFG"[("ABCDEFG".index(letter) + letterShift) % 7]

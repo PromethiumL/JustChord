@@ -65,13 +65,11 @@ class Chord:
         self.recognized = False
         s = set()
         for item in CHORD_DATA:
-            # print('{} vs {}'.format(self.intervals, set(map(lambda intervalName:INTERVAL_SIZE[intervalName], item[0]))))
             if self.intervals == set(map(lambda intervalName: (INTERVAL_SIZE[intervalName] % 12), item[0])):
                 self.recognized = True
                 self.intervalNames = item[0]
                 s.add((item[2], item[1]))
                 break
-                # comment 'break' for more possible results.
         if self.recognized:
             lst = sorted(list(s))
             self.chordType = lst[0][1]
@@ -87,17 +85,26 @@ class Chord:
     def updateName(self, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
         if not self.recognized:
             self.buildChord()
-        self.rootName = getPitchName(self.rootPitch, key, roman_style)
-        self.bassName = getPitchName(self.bassPitch, key, roman_style)
+        # Spell note names using standard names (Roman numerals can't be used for interval math)
+        self.rootName = getPitchName(self.rootPitch, key, roman_style=False)
+        self.bassName = getPitchName(self.bassPitch, key, roman_style=False)
         self.typeName = self.chordType
         self.spellNoteNames()
+        # Now set display names (possibly Roman numerals)
+        if roman_style:
+            self.rootName = getPitchName(self.rootPitch, key, roman_style=True)
+            self.bassName = getPitchName(self.bassPitch, key, roman_style=True)
         if roman_style and self.typeName is not None:
             if self.isMinorChord():
-                self.rootName = self.rootName.lower()  # E.g. 'III' -> 'iii'
+                self.rootName = self.rootName.lower()
                 self.bassName = self.bassName.lower()
-                if self.typeName[0] == "m":
+                # Strip "m" prefix only when it's the minor indicator
+                # (e.g. "m", "m7", "mMaj7"), not part of a word (e.g. "minor 3rd")
+                if self.typeName == "m" or (
+                    self.typeName.startswith("m") and len(self.typeName) > 1 and not self.typeName[1].islower()
+                ):
                     self.typeName = self.typeName[1:]
-                if self.typeName[0:3] == "dim":
+                if self.typeName.startswith("dim"):
                     self.typeName = "°" + self.typeName[3:]
         elif self.typeName is None:
             self.typeName = "n.c."
@@ -159,7 +166,6 @@ def identifyChord(noteList, key=DEFAULT_KEY, roman_style=USE_ROMAN_STYLE):
         intervals = set(map(lambda x: getInterval(root, x), notes))
         chord = Chord(root, intervals, lowestNote)
         if chord.recognized:
-            # print(chord.name)
             if root == lowestNote:
                 chord.complexity -= 3
             results.append(chord)

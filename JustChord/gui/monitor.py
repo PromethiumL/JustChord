@@ -10,6 +10,14 @@ DEFAULT_MIDI_IN_PORT = 0
 MIDI_INITIALIZED = False
 CHECK_INTERVAL_MS = 10
 
+# MIDI protocol constants
+MIDI_NOTE_ON = 0x90
+MIDI_NOTE_OFF = 0x80
+MIDI_CC = 0xB0
+MIDI_CC_SUSTAIN_PEDAL = 64
+MIDI_SUSTAIN_THRESHOLD = 64
+MIDI_MIDDLE_C = 60
+
 sustainPedalDown = False
 pressedNotes = set()
 sustainedNotes = set()
@@ -43,17 +51,16 @@ class KeyDetector:
             self.frequencyDict[keyName] = 0
 
     def addNote(self, pitch):
-        weight = 1 if pitch > 60 else 2
+        weight = 1 if pitch > MIDI_MIDDLE_C else 2
         pitch %= 12
         if len(self.noteWindow) >= self.WINDOW_SIZE:
             for keyName in self.RELATED_KEYS[self.noteWindow[0][0]]:
-                self.frequencyDict[keyName] -= self.noteWindow[0][1]  # + (1 if self.noteWindow[0][2] == keyName else 0)
+                self.frequencyDict[keyName] -= self.noteWindow[0][1]
             self.noteWindow.pop(0)
         for keyName in self.RELATED_KEYS[pitch]:
-            self.frequencyDict[keyName] += weight  # + (1 if self.currentKey == keyName else 0)
+            self.frequencyDict[keyName] += weight
         self.noteWindow.append((pitch, weight, self.currentKey))
         result = list(reversed(sorted(self.frequencyDict.items(), key=lambda i: self.frequencyDict[i[0]])))
-        # print(result)
         if len(result) == 0:
             KeyDetector.currentKey = self.DEFAULT_KEY
             return
@@ -61,41 +68,27 @@ class KeyDetector:
 
 
 def initRtMidi(port=DEFAULT_MIDI_IN_PORT):
-    global midiIn
-    # midiin = rt.RtMidiIn()
+    global midiIn, MIDI_INITIALIZED
     midiIn.close_port()
-
     midiIn = rt.MidiIn()
-    # portCount = midiin.getPortCount()
     portCount = midiIn.get_port_count()
 
     if port is None or port >= portCount:
-        print(f"port {port} is invalid. Fallback to default port.")
         return
 
     if portCount:
-        # midiin.openPort(port)
         midiIn.open_port(port)
-        print("started monitoring MIDI input... port {}".format(port))
-        global MIDI_INITIALIZED
         MIDI_INITIALIZED = True
     else:
         raise Exception("No MIDI IN port found.")
 
 
 class Monitor(QThread):
-    class __Monitor:
-        def __init__(self) -> None:
-            pass
-
-    instance = None
     trigger = pyqtSignal(str)
     keyDetector = KeyDetector()
 
     def __init__(self):
-        super(Monitor, self).__init__()
-        if not Monitor.instance:
-            Monitor.instance = Monitor.__Monitor()
+        super().__init__()
         self.msg_queue = []
         self.lock = threading.RLock()
 
@@ -107,7 +100,6 @@ class Monitor(QThread):
             if not midiIn.is_port_open():
                 time.sleep(CHECK_INTERVAL_MS * 0.001)
                 continue
-            # msg = midiin.getMessage()
             msg = midiIn.get_message()
             if msg:
                 msg = msg[0]  # the raw data
@@ -129,41 +121,31 @@ class Monitor(QThread):
             self.msg_queue.append(msg)
 
     def process_message(self, msg):
-        # print(msg)
-        global sustainPedalDown
-        global pressedNotes
-        global sustainedNotes
-        c = msg[0]  # channel
-        p = msg[1]  # pitch
-        v = msg[2]  # velocity
-        # print(msg)
-        # check the pedal cc [0xB0, 64, velo]
+        global sustainPedalDown, pressedNotes, sustainedNotes
+        channel = msg[0]
+        pitch = msg[1]
+        velocity = msg[2]
 
-        # Currently, it's better to process all 16 channels.
-        c = c >> 4 << 4  # remove this line for only channel 1.
-        if c == 0xB0 and p == 64:
-            if v >= 64:
+        # Normalize to strip MIDI channel number (process all 16 channels)
+        channel = channel >> 4 << 4
+        if channel == MIDI_CC and pitch == MIDI_CC_SUSTAIN_PEDAL:
+            if velocity >= MIDI_SUSTAIN_THRESHOLD:
                 sustainPedalDown = True
             else:
                 sustainPedalDown = False
                 sustainedNotes = set()
-            # if len(pressedNotes | sustainedNotes) >= 0:  # keep updating
-            # self.update(list(pressedNotes | sustainedNotes))
             return
 
-        # update note status
-        if v > 0 and c != 0x80:
-            if c == 0x90:
-                pressedNotes.add(p)
-                self.keyDetector.addNote(p)
-                # print(self.keyDetector.currentKey)
-        elif c == 0x80 or c == 0x90:  # "note off" or "note on, velocity=0"
+        if velocity > 0 and channel == MIDI_NOTE_ON:
+            pressedNotes.add(pitch)
+            self.keyDetector.addNote(pitch)
+        elif channel == MIDI_NOTE_OFF or channel == MIDI_NOTE_ON:
             if sustainPedalDown:
-                if p in pressedNotes:
-                    sustainedNotes.add(p)
-                    pressedNotes.discard(p)
+                if pitch in pressedNotes:
+                    sustainedNotes.add(pitch)
+                    pressedNotes.discard(pitch)
             else:
-                pressedNotes.discard(p)
+                pressedNotes.discard(pitch)
 
     def update(self, notes):
         global currentChords

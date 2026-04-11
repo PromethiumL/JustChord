@@ -1,7 +1,8 @@
 import sys
 import traceback
+from dataclasses import dataclass
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QFontDatabase, QWheelEvent
 from PyQt6.QtWidgets import (
     QApplication,
@@ -23,21 +24,33 @@ from JustChord.gui.keyboardwidget import KeyboardWidget
 from JustChord.gui.staffwindow import StaffWindow
 from JustChord.gui.widget import Widget
 
+FONT_PATH = "./assets/Gothic_A1/GothicA1-Regular.ttf"
+
+
+@dataclass
+class MainWindowConfig:
+    window_width: int = 1024
+    window_height: int = 512
+    default_opacity: int = 255
+    min_opacity: int = 0
+    max_opacity: int = 255
+    opacity_step: int = 5
+    grip_size: int = 20
+    default_font_size: int = 24
+
 
 class JustChordMainWindow(QWidget):
-    def __init__(self):
+    def __init__(self, config=None):
         super().__init__()
+        self.config = config or MainWindowConfig()
         self.setWindowTitle("JustChord")
-        self.resize(1024, 512)
+        self.resize(self.config.window_width, self.config.window_height)
 
-        """Container holds my own widgets"""
         self.container = QWidget(parent=self)
-        self.container.resize(600, 600)
-        self.opacity = 200  # Ranges from 0 to 255
-        self.container.setStyleSheet(".QWidget {{background-color: rgb(255, 255, 255, {});}}".format(self.opacity))
+        self.opacity = self.config.default_opacity
+        self.container.setStyleSheet(".QWidget {{background-color: rgba(255, 255, 255, {});}}".format(self.opacity))
         self.container.show()
         self.chordWindow = ChordWindow(self.container)
-        # self.setStyleSheet('border: 1px solid red')
         self.staffWindow = StaffWindow(self.container)
         container_layout = QHBoxLayout(self.container)
         container_layout.addWidget(self.staffWindow)
@@ -46,35 +59,28 @@ class JustChordMainWindow(QWidget):
 
         layout = QHBoxLayout(self)
         layout.addWidget(self.container)
-        # layout.setAlignment(Qt.AlignCenter)
-        # layout.setStretch(0, 0)
         self.setLayout(layout)
 
-        """This makes the UI semi-transparent"""
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
-        # self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        # self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        # self.setAttribute(Qt.WA_AlwaysStackOnTop)
 
-        """Size Grips"""
         self.size_grips = []
         self.show_size_grips = True
         for pos in "TL,TR,BL,BR".split(","):
             grip = QSizeGrip(self)
             grip.mouseMoveEvent = lambda *args: None
             grip.setObjectName(pos)
-            grip.setFixedSize(20, 20)
-            # grip.setStyleSheet('border: 3px solid #6f6; border-radius: 5px; background-color: #373; mouse:pointer;')
+            gs = self.config.grip_size
+            grip.setFixedSize(gs, gs)
             w, h = self.width(), self.height()
             if pos == "TL":
                 grip.move(0, 0)
             if pos == "TR":
-                grip.move(w - 20, 0)
+                grip.move(w - gs, 0)
             if pos == "BL":
-                grip.move(0, h - 20)
+                grip.move(0, h - gs)
             if pos == "BR":
-                grip.move(w - 20, h - 20)
+                grip.move(w - gs, h - gs)
             grip.setVisible(self.show_size_grips)
             self.size_grips.append(grip)
 
@@ -87,8 +93,6 @@ class JustChordMainWindow(QWidget):
 
     def contextMenuEvent(self, e):
         contextMenu = QMenu(self)
-        # controls
-
         toggle_control = QAction("Show Size Grips", contextMenu, checkable=True, checked=self.show_size_grips)
         toggle_control.triggered.connect(self.toggleSizeGrips)
         contextMenu.addAction(toggle_control)
@@ -113,48 +117,37 @@ class JustChordMainWindow(QWidget):
         self.isMouseDown = False
 
     def wheelEvent(self, e: QWheelEvent):
-        self.opacity += 5 if not e.angleDelta().y() < 0 else -5
-        if self.opacity < 0:
-            self.opacity = 0
-        if self.opacity > 255:
-            self.opacity = 255
-        self.container.setStyleSheet(".QWidget {{background-color: rgb(255, 255, 255, {});}}".format(self.opacity))
+        step = self.config.opacity_step
+        self.opacity += step if e.angleDelta().y() > 0 else -step
+        self.opacity = max(self.config.min_opacity, min(self.config.max_opacity, self.opacity))
+        self.container.setStyleSheet(".QWidget {{background-color: rgba(255, 255, 255, {});}}".format(self.opacity))
 
     def resizeEvent(self, e):
+        gs = self.config.grip_size
         for grip in self.size_grips:
             w, h = self.width(), self.height()
             if grip.objectName() == "TL":
                 grip.move(0, 0)
             if grip.objectName() == "TR":
-                grip.move(w - 20, 0)
+                grip.move(w - gs, 0)
             if grip.objectName() == "BL":
-                grip.move(0, h - 20)
+                grip.move(0, h - gs)
             if grip.objectName() == "BR":
-                grip.move(w - 20, h - 20)
-            # grip.setVisible(self.show_size_grips)
-
-
-default_midi_port = 0
+                grip.move(w - gs, h - gs)
 
 
 class JustChordApp(QApplication):
-    select_midi_mort_signal = pyqtSignal(str)
-
     def __init__(self):
         try:
-            super(JustChordApp, self).__init__(sys.argv)
-            # apply_stylesheet(self, theme='light_cyan.xml')
+            super().__init__(sys.argv)
 
-            # Init MIDI
             self.midi_in_wizard(force=False)
-            # self.select_midi_mort_signal.connect(self.midi_in_wizard)
 
-            # Load Font
-            font_id = QFontDatabase.addApplicationFont("./assets/Gothic_A1/GothicA1-Regular.ttf")
+            font_id = QFontDatabase.addApplicationFont(FONT_PATH)
             if font_id != -1:
-                self.setStyleSheet('.QLabel { font: 24pt "Gothic A1"; }')
+                self.setStyleSheet(f'.QLabel {{ font: {MainWindowConfig.default_font_size}pt "Gothic A1"; }}')
             else:
-                self.setStyleSheet('.QLabel {{ font: "Arial"; }}')
+                self.setStyleSheet('.QLabel { font: "Arial"; }')
 
             # Create Window
             jcMainWindow = JustChordMainWindow()
@@ -174,7 +167,6 @@ class JustChordApp(QApplication):
             traceback.print_exc()
 
     def midi_in_wizard(self, force=False):
-        # num_ports = monitor.midiIn.get_port_count()
         port = MidiSelectionDialog().exec()
         if port >= 0:
             monitor.initRtMidi(port=port)

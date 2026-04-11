@@ -14,28 +14,6 @@ from PyQt6.QtWidgets import QApplication, QWidget
 import JustChord.gui.monitor as monitor
 from JustChord.gui import widget
 
-keyboard_offsets = [
-    0,
-    -5 / 7,
-    2 / 7,
-    -4 / 7,
-    3 / 7,
-    -1 / 7,
-    -1 / 7,
-    1 / 7,
-    -3 / 7,
-    3 / 7,
-]
-
-# light_gray_brush = QBrush(Qt.lightGray, Qt.BrushStyle.SolidPattern)
-# gray_brush = QBrush(Qt.darkGray, Qt.BrushStyle.SolidPattern)
-# white_brush = QBrush(Qt.white, Qt.BrushStyle.SolidPattern)
-# green_brush = QBrush(QColor(0x32, 0xf0, 0x80), Qt.BrushStyle.SolidPattern)
-# dark_green_brush = QBrush(QColor(0x11, 0xc1, 0x57), Qt.BrushStyle.SolidPattern)
-# blue_brush = QBrush(QColor(0, 0x90, 0xff), Qt.BrushStyle.SolidPattern)
-# light_blue_brush = QBrush(QColor(0x44, 0x99, 0xff), Qt.BrushStyle.SolidPattern)
-# dark_blue_brush = QBrush(QColor(0, 0x80, 0xdd), Qt.BrushStyle.SolidPattern)
-
 
 @cache
 def get_brush(color: Tuple[int, int, int]):
@@ -52,14 +30,6 @@ def is_white(pitch):
 
 _is_white = [int(is_white(x)) for x in range(12)]
 _accumulated_white = [sum(_is_white[0 : i + 1]) for i in range(12)]
-
-
-def argmax(lst):
-    return sorted(reversed(list(enumerate(lst))))[-1][0]
-
-
-def argmin(lst):
-    return sorted(reversed(list(enumerate(lst))))[0][0]
 
 
 def accumulated_white_keys(pitch):
@@ -108,15 +78,11 @@ class KeyboardWidget(QWidget):
         self.is_sustain_down = False
         self.mouse_current_pitch = None
         self.keyboardHeight = self.config.default_window_height  # height of the white key
-        # self.setStyleSheet('.KeyboardWidget { padding: 20px; }')
-
         self.pen = QPen(
             QColor(*self.config.keyboard_frame_color),
             self.config.keyboard_frame_stroke_width,
             Qt.PenStyle.SolidLine,
         )
-        self.painter = QPainter(self)
-        self.painter.setPen(self.pen)
         self.initUI()
         self.pixmap = QPixmap(int((self.horizontal_unit() + 1) * self.range()), int(self.keyboardHeight))
         self.generatePixmap()
@@ -124,14 +90,6 @@ class KeyboardWidget(QWidget):
 
         if self.config.enable_pygame_midi_playback and midi is not None:
             midi.init()
-        # self.midi_player = midi.Output(0)
-        # self.midi_player.set_instrument(self.config.midi_playback_instrument_id)
-
-        # try:
-        #
-        # except Exception as e:
-        #     print(e)
-        #     print('cannot connect to the MIDI monitor')
 
     def updateNotes(self):
         self.midi_pressed_notes = set(monitor.pressedNotes)
@@ -179,8 +137,6 @@ class KeyboardWidget(QWidget):
         painter = QPainter(self)
         painter.drawPixmap(QPoint(0, 0), self.pixmap)
 
-        # painter.drawRect(0, 0, int(self.range() * self.horizontal_unit()), int(self.keyboardHeight))
-
         painter.setPen(self.pen)
 
         config = self.config
@@ -215,7 +171,6 @@ class KeyboardWidget(QWidget):
                 if p in self.mouse_pressed_notes:
                     painter.setBrush(get_brush(config.keyboard_black_key_mouse_pressed_color))
                 elif p in self.mouse_sustained_notes:
-                    # painter.setBrush(light_gray_brush)
                     painter.setBrush(get_brush(config.keyboard_black_key_mouse_sustained_color))
                 x = (p - self.config.min_pitch) * self.black_step()
                 painter.drawRect(
@@ -260,7 +215,6 @@ class KeyboardWidget(QWidget):
         painter.end()
 
     def resizeEvent(self, e):
-        # self.resize(int(self.horizontal_unit() * self.range()), int(self.keyboardHeight))
         self.keyboardHeight = self.height()
         self.pixmap = QPixmap(int((self.horizontal_unit() + 1) * self.range()), int(self.keyboardHeight))
         self.generatePixmap()
@@ -271,7 +225,6 @@ class KeyboardWidget(QWidget):
             return
         if e.key() == Qt.Key.Key_Space:  # hold sustain pedal
             self.is_sustain_down = True
-            # print('sustain')
 
     def keyReleaseEvent(self, e: QKeyEvent):
         if e.isAutoRepeat():
@@ -282,7 +235,6 @@ class KeyboardWidget(QWidget):
                 if p not in self.mouse_pressed_notes:
                     self.note_off(p)
                 self.mouse_sustained_notes.discard(p)
-            # print('released')
 
     def mousePressEvent(self, e: QMouseEvent):
         x = e.position().x()

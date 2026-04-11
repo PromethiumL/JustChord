@@ -81,7 +81,6 @@ class JustChordMainWindow(QWidget):
         self.show()
 
     def toggleSizeGrips(self):
-        print("triggered")
         self.show_size_grips = not self.show_size_grips
         for control in self.size_grips:
             control.setVisible(self.show_size_grips)
@@ -101,7 +100,7 @@ class JustChordMainWindow(QWidget):
         contextMenu.exec(self.mapToGlobal(e.pos()))
 
     def mousePressEvent(self, e):
-        if e.button == Qt.MouseButton.LeftButton:
+        if e.button() == Qt.MouseButton.LeftButton:
             self.isMouseDown = True
         self.p = e.globalPosition()
 
@@ -153,12 +152,8 @@ class JustChordApp(QApplication):
             # Load Font
             font_id = QFontDatabase.addApplicationFont("./assets/Gothic_A1/GothicA1-Regular.ttf")
             if font_id != -1:
-                print(QFontDatabase.applicationFontFamilies(int(font_id)))
-                # font_name = QFontDatabase.applicationFontFamilies(int(font_id))[0]
-                # print('css', 'QLabel {{ font: "{}"; }}'.format(font_name))
                 self.setStyleSheet('.QLabel { font: 24pt "Gothic A1"; }')
             else:
-                print("default app font not found!")
                 self.setStyleSheet('.QLabel {{ font: "Arial"; }}')
 
             # Create Window
@@ -182,14 +177,13 @@ class JustChordApp(QApplication):
         # num_ports = monitor.midiIn.get_port_count()
         port = MidiSelectionDialog().exec()
         if port >= 0:
-            print("using midi port", port)
             monitor.initRtMidi(port=port)
         elif force:
             popup = QMessageBox()
             popup.setWindowTitle("Alert")
             popup.setText("No MIDI input device is selected, which is currently not supported.")
-            popup.setIcon(QMessageBox.Information)
-            popup.addButton("Exit", QMessageBox.AcceptRole)
+            popup.setIcon(QMessageBox.Icon.Information)
+            popup.addButton("Exit", QMessageBox.ButtonRole.AcceptRole)
             popup.exec()
             sys.exit(0)
         else:
@@ -237,9 +231,6 @@ class MidiSelectionDialog(QDialog):
 
     def getListItems(self):
         ports = monitor.midiIn.get_port_count()
-        print("Available MIDI IN ports:")
-        for i in range(ports):
-            print("\t", monitor.midiIn.get_port_name(i))
         return [monitor.midiIn.get_port_name(p) for p in range(ports)]
 
 

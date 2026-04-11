@@ -47,7 +47,6 @@ def getPitchName(
         candidates = list(filter(lambda s: s[0] == specified_letter, list(PITCH_INDEX)))
         if candidates == []:
             result = getPitchName(pitch, with_octave=True)
-            print("Enharmonically subsituted: {}".format(result))
             return result
             # raise Exception("Incorrect Note: letter {} does not match any note".format(specified_letter))
         for s in candidates:

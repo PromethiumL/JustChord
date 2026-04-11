@@ -3,7 +3,10 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Tuple
 
-import pygame.midi as midi
+try:
+    import pygame.midi as midi
+except ImportError:
+    midi = None
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QMouseEvent, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QApplication, QWidget
@@ -119,7 +122,8 @@ class KeyboardWidget(QWidget):
         self.generatePixmap()
         self.update()
 
-        midi.init()
+        if self.config.enable_pygame_midi_playback and midi is not None:
+            midi.init()
         # self.midi_player = midi.Output(0)
         # self.midi_player.set_instrument(self.config.midi_playback_instrument_id)
 
@@ -130,9 +134,9 @@ class KeyboardWidget(QWidget):
         #     print('cannot connect to the MIDI monitor')
 
     def updateNotes(self):
-        # print('update notes')
         self.midi_pressed_notes = set(monitor.pressedNotes)
         self.midi_sustained_notes = set(monitor.sustainedNotes)
+        self.update()
 
     def send_midi_msg_to_monitor(self, channel, pitch, velocity):
         with widget.Widget.monitor.lock:
@@ -178,7 +182,6 @@ class KeyboardWidget(QWidget):
         # painter.drawRect(0, 0, int(self.range() * self.horizontal_unit()), int(self.keyboardHeight))
 
         painter.setPen(self.pen)
-        self.update()
 
         config = self.config
         notes_to_draw = (
@@ -231,7 +234,6 @@ class KeyboardWidget(QWidget):
                 )
             )
             painter.drawLine(0, 0, self.width(), 0)
-        self.update()
 
     def generatePixmap(self):
         self.pixmap.fill(Qt.GlobalColor.transparent)

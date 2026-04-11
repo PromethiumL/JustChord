@@ -79,7 +79,6 @@ class ChordWindow(Widget):
         font, valid = QFontDialog.getFont()
         font_name = font.toString().split(",")[0]
         if valid:
-            print(font.pixelSize())
             for idx, lbs in enumerate(self.chord_labels):
                 lbs[0].setStyleSheet(
                     "font-size: {}pt;".format(
@@ -145,7 +144,7 @@ class ChordWindow(Widget):
                 lbs[0].setText(
                     ""
                     if i >= num_chords
-                    else (chordObj.name[0] if self.config.allow_slash_chord else chordObj.get_base_name())
+                    else (chordObj.name[0] if self.config.allow_slash_chord else chordObj.getBaseName())
                 )
                 lbs[0].adjustSize()
                 lbs[1].move(

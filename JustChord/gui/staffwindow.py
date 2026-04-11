@@ -179,6 +179,7 @@ class StaffWindow(Widget):
                 self.addNote(noteName)
 
         self.drawNotes()
+        self.update()
 
     def setKeySignatures(self, keyName="C"):
         if keyName not in NATURAL_SCALES:
@@ -500,7 +501,6 @@ class StaffWindow(Widget):
                     int(note.pos().x() + (1 + 0.1) * note.width()),
                     int(additionalLineY),
                 )
-        self.update()
 
 
 if __name__ == "__main__":
@@ -515,5 +515,3 @@ if __name__ == "__main__":
     # staffWidget.addNote(71)
     sys.exit(app.exec())
 
-print("staffwindow: ")
-print(sys.path)

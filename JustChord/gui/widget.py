@@ -21,7 +21,7 @@ class Widget(QFrame):
             QApplication.instance().quit()
 
     def mousePressEvent(self, e: QMouseEvent):
-        if e.button == Qt.MouseButton.LeftButton:
+        if e.button() == Qt.MouseButton.LeftButton:
             self.isMouseDown = True
         self.p = e.globalPosition()
 
@@ -37,7 +37,6 @@ class Widget(QFrame):
     def initMonitor(self):
         if not Widget.monitoring:
             Widget.monitoring = True
-            print("Widget connected to monitor.")
             Widget.monitor = monitor.Monitor()
             Widget.monitor.start()
             if not monitor.MIDI_INITIALIZED:

@@ -94,7 +94,6 @@ class Monitor(QThread):
 
     def __init__(self):
         super(Monitor, self).__init__()
-        print("Initializing Monitor")
         if not Monitor.instance:
             Monitor.instance = Monitor.__Monitor()
         self.msg_queue = []
@@ -168,7 +167,6 @@ class Monitor(QThread):
 
     def update(self, notes):
         global currentChords
-        global ALLOW_SLASH_CHORD
         if notes:
             chord_list = chord.identifyChord(notes)
             currentChords = chord_list

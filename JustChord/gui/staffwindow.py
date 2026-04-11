@@ -1,6 +1,7 @@
 import re
 import sys
 from dataclasses import dataclass
+from itertools import product
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen
@@ -150,31 +151,32 @@ class StaffWindow(Widget):
         if __name__ != "__main__":
             Widget.monitor.trigger.connect(self.updateNotes)
 
+    def _resolve_note_names(self, pitches):
+        """Map sounding pitches to spelled note names using chord context."""
+        if not monitor.currentChords or monitor.currentChords[0].isBlank:
+            return {chord.getPitchName(p, with_octave=True, key=self.keyName) for p in pitches}
+
+        names = set()
+        thisChord = monitor.currentChords[0]
+        thisChord.updateName(key=self.keyName)
+        for name, pitch in product(thisChord.noteNames, pitches):
+            if pitch % 12 != chord.getPitchNumber(name) % 12:
+                continue
+            octave = getPitchOctaveNumber(pitch)
+            # Adjust octave for enharmonic spellings that cross octave boundaries
+            if PITCH_INDEX[name] < 0:
+                octave += 1
+            elif PITCH_INDEX[name] > 11:
+                octave -= 1
+            names.add(name + str(octave))
+        return names
+
     def updateNotes(self):
         self.keyName = monitor.KeyDetector.currentKey
         self.setKeySignatures(self.keyName)
 
-        # Notes
-        names = set()
         pitches = monitor.pressedNotes | monitor.sustainedNotes
-        if monitor.currentChords and not monitor.currentChords[0].isBlank:
-            # Update chord tones
-            thisChord = monitor.currentChords[0]
-            thisChord.updateName(key=self.keyName)
-            for name in thisChord.noteNames:
-                for pitch in pitches:
-                    if pitch % 12 == chord.getPitchNumber(name) % 12:
-                        octave = getPitchOctaveNumber(pitch)
-                        if PITCH_INDEX[name] < 0:
-                            octave += 1
-                        if PITCH_INDEX[name] > 11:
-                            octave -= 1
-                        names.add(name + str(octave))
-        else:
-            # Not a chord
-            for pitch in pitches:
-                noteName = chord.getPitchName(pitch, with_octave=True, key=self.keyName)
-                names.add(noteName)
+        names = self._resolve_note_names(pitches)
 
         # Remove old notes
         for noteName in list(self.noteWidgets.keys()):
@@ -193,10 +195,9 @@ class StaffWindow(Widget):
         if keyName not in NATURAL_SCALES:
             raise Exception("invalid keyName{}".format(keyName))
         if keyName == "C":
-            for clef in ["G", "F"]:
-                for name in ["sharp", "flat"]:
-                    for svg in self.keySignatures[clef][name]:
-                        svg.setVisible(False)
+            for clef, name in product(["G", "F"], ["sharp", "flat"]):
+                for svg in self.keySignatures[clef][name]:
+                    svg.setVisible(False)
             return
         isSharpKey = keyName in KEY_LIST[0]
         number = KEY_LIST[0 if isSharpKey else 1].index(keyName) + 1

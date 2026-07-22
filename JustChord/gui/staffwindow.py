@@ -8,8 +8,12 @@ from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtWidgets import QApplication
 
+import logging
+
 import JustChord.gui.monitor as monitor
 from JustChord.core import chord, config
+
+_log = logging.getLogger("justchord.ui")
 from JustChord.core.constants import KEY_LIST, NATURAL_SCALES, PITCH_INDEX
 from JustChord.core.utils import getPitchOctaveNumber
 from JustChord.gui.imports import resource_path
@@ -446,10 +450,18 @@ class StaffWindow(Widget):
         return currentAccidental
 
     def resizeEvent(self, e):
+        _log.debug("StaffWindow.resizeEvent %dx%d -> %dx%d", e.oldSize().width(), e.oldSize().height(), e.size().width(), e.size().height())
         self.staffCenterY = self.height() / 2
         self.drawStaff()
         self.drawNotes()
         self.setKeySignatures(self.keyName)
+
+    def moveEvent(self, e):
+        if e.oldPos() != e.pos():
+            _log.debug("StaffWindow.moveEvent %d,%d -> %d,%d", e.oldPos().x(), e.oldPos().y(), e.pos().x(), e.pos().y())
+
+    def showEvent(self, e):
+        _log.debug("StaffWindow.showEvent")
 
     def paintEvent(self, e):
         painter = QPainter(self)

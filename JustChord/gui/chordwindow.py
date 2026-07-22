@@ -1,4 +1,5 @@
 import copy
+import logging
 from dataclasses import dataclass
 
 from PyQt6.QtCore import Qt
@@ -9,6 +10,8 @@ import JustChord.gui.monitor as monitor
 from JustChord.core import chord, config
 from JustChord.core.constants import KEY_LIST
 from JustChord.gui.widget import Widget
+
+_log = logging.getLogger("justchord.ui")
 
 CHORD_LABEL_TIP = """
 Usage:
@@ -189,10 +192,6 @@ class ChordWindow(Widget):
         )
 
     def initUI(self):
-        self.resize(800, 600)
-        self.center()
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pl = QPalette()
         self.pl.setColor(QPalette.ColorRole.WindowText, QColor(50, 50, 50))
@@ -237,6 +236,17 @@ class ChordWindow(Widget):
         self.key_label.setPalette(self.pl)
         self.key_label.adjustSize()
         self.show()
+
+    def resizeEvent(self, e):
+        _log.debug("ChordWindow.resizeEvent %dx%d -> %dx%d", e.oldSize().width(), e.oldSize().height(), e.size().width(), e.size().height())
+        super().resizeEvent(e)
+
+    def moveEvent(self, e):
+        if e.oldPos() != e.pos():
+            _log.debug("ChordWindow.moveEvent %d,%d -> %d,%d", e.oldPos().x(), e.oldPos().y(), e.pos().x(), e.pos().y())
+
+    def showEvent(self, e):
+        _log.debug("ChordWindow.showEvent")
 
     def keyNameClicked(self, keyName):
         self.keyName = keyName

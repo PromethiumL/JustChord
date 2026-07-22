@@ -12,7 +12,10 @@ dependencies = [
 justchord = "JustChord.gui.app:main"
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "pytest>=8.0",
+    "rich>=14.3.4",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
